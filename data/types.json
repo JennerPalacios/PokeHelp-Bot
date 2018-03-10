@@ -1,0 +1,110 @@
+{
+	"Normal": {
+		"color": "#8a8a59",
+		"strength": "",
+		"weakness": "Fighting",
+		"suggested": "Blissey Snorlax"
+	},
+	"Fighting": {
+		"color": "#c03028",
+		"strength": "Normal Rock Steel Ice Dark",
+		"weakness": "Flying Psychic Fairy",
+		"suggested": "Heracross Machamp Poliwrath"
+	},
+	"Rock": {
+		"color": "#b8a038",
+		"strength": "Flying Bug Fire Ice",
+		"weakness": "Fighting Ground Steel Water Grass",
+		"suggested": "Tyranitar Golem Rhydon Omastar"
+	},
+	"Steel": {
+		"color": "#b8b8d0",
+		"strength": "Rock Ice Fairy",
+		"weakness": "Fighting Ground Fire",
+		"suggested": "Scizor Steelix Forretress"
+	},
+	"Ice": {
+		"color": "#98d8d8",
+		"strength": "Flying Ground Grass Dragon",
+		"weakness": "Fighting Rock Steel Fire",
+		"suggested": "Articuno Lapras Jynx Cloyster"
+	},
+	"Dark": {
+		"color": "#707070",
+		"strength": "Ghost Psychic",
+		"weakness": "Fighting Bug Fairy",
+		"suggested": "Tyranitar Houndoom Umbreon"
+	},
+	"Flying": {
+		"color": "#a890f0",
+		"strength": "Fighting Bug Grass",
+		"weakness": "Rock Electric Ice",
+		"suggested": "Lugia Crobat"
+	},
+	"Bug": {
+		"color": "#a8b820",
+		"strength": "Grass Psychic Dark",
+		"weakness": "Flying Rock Fire",
+		"suggested": ""
+	},
+	"Grass": {
+		"color": "#78c850",
+		"strength": "Ground Rock Water",
+		"weakness": "Flying Poison Bug Fire Ice",
+		"suggested": ""
+	},
+	"Poison": {
+		"color": "#a040a0",
+		"strength": "Grass Fairy",
+		"weakness": "Ground Psychic",
+		"suggested": ""
+	},
+	"Fairy": {
+		"color": "#e898e8",
+		"strength": "Fighting Dragon Dark",
+		"weakness": "Poison Steel",
+		"suggested": ""
+	},
+	"Ground": {
+		"color": "#e0c068",
+		"strength": "Poison Rock Steel Fire Electric",
+		"weakness": "Water Grass Ice",
+		"suggested": ""
+	},
+	"Fire": {
+		"color": "#f08030",
+		"strength": "Bug Steel Grass Ice",
+		"weakness": "Ground Rock Water",
+		"suggested": ""
+	},
+	"Electric": {
+		"color": "#f8d030",
+		"strength": "Flying Water",
+		"weakness": "Ground",
+		"suggested": ""
+	},
+	"Psychic": {
+		"color": "#f85888",
+		"strength": "Fighting Poison",
+		"weakness": "Bug Ghost Dark",
+		"suggested": ""
+	},
+	"Ghost": {
+		"color": "#705898",
+		"strength": "Ghost Psychic",
+		"weakness": "Ghost Dark",
+		"suggested": ""
+	},
+	"Water": {
+		"color": "#6890f0",
+		"strength": "Ground Rock Fire",
+		"weakness": "Grass Electric",
+		"suggested": ""
+	},
+	"Dragon": {
+		"color": "#7038f8",
+		"strength": "Dragon",
+		"weakness": "Ice Dragon Fairy",
+		"suggested": ""
+	}
+}
