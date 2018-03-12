@@ -124,6 +124,7 @@ function timeStamp(type){
 // BOT SIGNED IN AND IS READY
 //
 bot.on('ready', () => {
+	config.botVersion="2.0";
 	console.info(timeStamp(2)+"-- DISCORD HELPBOT: "+bot.user.username+", ADMIN MODULE IS READY --");
 	request("https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/version.txt",
 		function(error,response,body){
