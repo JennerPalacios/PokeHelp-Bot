@@ -1,7 +1,6 @@
 {
 	"token": "BOT_TOKEN",
 	"botID": "BOT_USER_ID",
-	"botVersion": "2.0",
 	"ownerID": "YOUR_USER_ID",
 	"serverName": "NAME_OF_YOUR_SERVER",
 	"serverID": "SERVER_ID",
