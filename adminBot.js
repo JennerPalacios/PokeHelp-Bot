@@ -44,6 +44,18 @@ var embedMSG="", skip="", msg1="", msg2="", command="", args="",
 	guild="", user="", channel="", mentioned="", channeled="",
 	createOutput="", createTag="", fetchOutput="";
 
+
+//
+// SPOOFNINJA SETTINGS
+//
+var spoofFlag="off";
+var spoofChan="";
+var spoofWHID="";
+//
+//
+//
+
+
 // AVOID ADVERTISEMENT | OTHER SERVER NAMES
 const advTxt=["seapokemap","sea-pokemap","pokehuntr","gymhuntr","pokefetch"];
 	
@@ -289,6 +301,81 @@ bot.on('message', message => {
 	let AdminR=guild.roles.find("name", config.adminRoleName); if(!AdminR){ AdminR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.adminRoleName); }
 	let ModR=guild.roles.find("name", config.modRoleName); if(!ModR){ ModR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.modRoleName); }
 	
+	
+//
+// SPOOF NINJA COMPATIBILITY - AUTO BAN - MORE TO COME
+//
+	if(spoofChan && message.channel.id===spoofChan) {
+		if(message.content){
+			if(message.content.startsWith("!spoof")){
+				if(message.member.roles.has(ModR.id) || message.member.roles.has(AdminR.id) || message.member.id===config.ownerID){
+					if(message.content.includes("autoban")){
+						if(message.content.includes("on")){
+							spoofFlag="on";
+							return message.channel.send("✅ `SpoofNinja`'s AutoBan `onJoinEvents()` is now **Enabled**")
+						}
+						if(message.content.includes("off")){
+							spoofFlag="off";
+							return message.channel.send("⚠ `SpoofNinja`'s AutoBan `onJoinEvents()` is now **Disabled**")
+						}
+						if(message.content.includes("check")){
+							if(spoofFlag==="on"){
+								return message.channel.send("✅ `SpoofNinja`'s AutoBan `onJoinEvents()` is **Enabled**")
+							}
+							if(spoofFlag==="off"){
+								return message.channel.send("⚠ `SpoofNinja`'s AutoBan `onJoinEvents()` is **Disabled**")
+							}
+						}
+					}
+					embedMSG={
+						"color": 0xFF0000,
+						"title": "ℹ Available Syntax and Arguments ℹ",
+						"description": "`!spoof autoban <on/off>` to enable/disable\n"
+							+"`!spoof autoban check` » check current setting \n"
+					};
+					return message.channel.send({embed: embedMSG});
+				}
+			}
+		}
+		if(message.embeds.length!==0 && spoofFlag==="on" && spoofWHID){
+			if(message.embeds[0]){
+				if(message.embeds[0].message.webhookID===spoofWHID){
+					let spoofNinja=message.embeds[0].description;
+					if(spoofNinja){
+						if(spoofNinja.split("\n")){
+							spoofNinja=spoofNinja.split("\n")
+							if(spoofNinja.length>4){
+								let joinEvent=spoofNinja.some(txt=>txt.includes("joined"))
+								if(joinEvent===true){
+									let catchID=spoofNinja[2].split(" ");
+									catchID=catchID[1].slice(2,-1);
+									embedMSG={
+										'color': 0xFF0000,
+										'title': '⚠ ⛔ YOU HAVE BEEN BANNED ⛔ ⚠',
+										'thumbnail': {'url': "https://raw.githubusercontent.com/JennerPalacios/SimpleDiscordBot/master/img/Poke-banned.png"},
+										'description': '**From Server**: San Diego Hills\n**Reason**: Rule #1 violation; '
+											+'**you** were found in **spoofing** server(s). We have zero tolerance for **spoofers**, and **any** connection to '
+											+' discord spoofing servers...\n.\n**By**: Bot[`AutoDetect`]\n**On**: '+timeStamp(2)
+									};
+									message.guild.member(catchID).send({embed: embedMSG}).then(()=>{
+										try {
+											message.guild.member(catchID).ban({dats: 7, reason: "AutoBan: Rule #1 violation, user was found in spoofing server(s)"})
+										}
+										catch(err){
+											message.channel.send("Error: \n"+err);
+										}
+									}).catch(console.error);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+//
+// END OF: SPOOFNINJA COMPATIBILITY
+//
 
 
 // ##########################################################################
