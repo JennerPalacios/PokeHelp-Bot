@@ -12,10 +12,9 @@ A Discord bot - written in JavaScript - for Pokémon Go discord servers. This bo
 
 A **Notepad++** style theme included: `DiscordJs.xml`
 Installation:
-    * Copy this file to "`%APPDATA%\Notepad++\themes`"
-        ▲ [WIN]+[R] Shortcut to open up RUN prompt, and paste: `%APPDATA%\Notepad++\themes`
-    * Open Notepad++, Task Menu Bar » `Settings` » `Style Configurator` » Select Theme: `DiscorJs`
-
+   * Copy this file to "`%APPDATA%\Notepad++\themes`"
+      * ▲ [WIN]+[R] Shortcut to open up RUN prompt, and paste: `%APPDATA%\Notepad++\themes`
+   * Open Notepad++, Task Menu Bar » `Settings` » `Style Configurator` » Select Theme: `DiscorJs`
 
 # REQUIREMENTS:
 
