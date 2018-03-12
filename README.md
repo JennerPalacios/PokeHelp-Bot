@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/screenShots/infoBot.png" />
+
 # VISIT THE WIKI FOR INFO, AND SCREENSHOTS
 
 For suggestions, concerns, troubleshoot, new features, updates, etc, join my discord server: 
