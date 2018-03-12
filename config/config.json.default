@@ -103,33 +103,33 @@
 		"enabled": "no",
 		"channelID": "CHANNEL_ID",
 		"valor": {
-			"leads": [
+			"leadIDs": [
 				"USER_ID_1",
 				"USER_ID_2"
 			],
-			"leadRoles": [
+			"leadRoleIDs": [
 				"LEAD_ROLE_ID",
 				"CO-LEAD_ROLE_ID"
 			],
 			"channelID": "CHANNEL_ID"
 		},
 		"instinct": {
-			"leads": [
+			"leadIDs": [
 				"USER_ID_1",
 				"USER_ID_2"
 			],
-			"leadRoles": [
+			"leadRoleIDs": [
 				"LEAD_ROLE_ID",
 				"CO-LEAD_ROLE_ID"
 			],
 			"channelID": "CHANNEL_ID"
 		},
 		"mystic": {
-			"leads": [
+			"leadIDs": [
 				"USER_ID_1",
 				"USER_ID_2"
 			],
-			"leadRoles": [
+			"leadRoleIDs": [
 				"LEAD_ROLE_ID",
 				"CO-LEAD_ROLE_ID"
 			],
