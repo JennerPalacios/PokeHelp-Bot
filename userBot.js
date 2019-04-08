@@ -11,8 +11,8 @@ const bot=new Discord.Client();
 const config=require('./config/config.json');
 const fs = require("fs");
 const request = require("request");
-const sql = require("sqlite");
-sql.open("./database/data.sqlite");
+const sqlite = require("sqlite");
+sqlite.open("./database/sensitive_data.sqlite");
 
 /*
 Copyright (c) 2018 Jenner Palacios
@@ -40,8 +40,8 @@ SOFTWARE.
 //
 // COMMON VARIABLES, ARRAYS, AND OBJECTS
 //
-var embedMSG="", skip="", msg1="", msg2="", command="", args="",
-	guild="", user="", channel="", mentioned="", channeled="";
+var embedMSG="", skip="", msg1="", msg2="", command="", args="", args2="",
+	guild="", member="", channel="", mentioned="", channeled="";
 
 // DATE&TIME VALUES
 const DTdays=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -54,9 +54,8 @@ const DTmonths=["January","February","March","April","May","June","July","August
 //
 setInterval(function(){
 	let timeNow=new Date().getTime(); let dbTime=""; let daysLeft="";
-	sql.run("CREATE TABLE IF NOT EXISTS selfTemp_roles (userID TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT)").catch(console.error);
-	sql.all(`SELECT * FROM selfTemp_roles`).then(rows => {
-		if (!rows) {
+	sqlite.all(`SELECT * FROM roles_tempSelf`).then(rows => {
+		if (!rows){
 			return console.info(timeStamp(2)+"[ADMIN] No one is in the DataBase");
 		}
 		else {
@@ -72,7 +71,7 @@ setInterval(function(){
 						+rows[rowNumber].temporaryRole+"** 😭").catch(console.error);
 					
 					// CHECK IF ROLE EXIST, AND CHECK IF USER STILL IN SERVER
-					let rName=bot.guilds.get(config.serverID).roles.find('name', rows[rowNumber].temporaryRole); 
+					let rName=bot.guilds.get(config.serverID).roles.find(role => role.name === rows[rowNumber].temporaryRole); 
 					if(!rName){ return console.log("[ERROR] [ADMIN] [TEMPORARY-TAG] Role ID: "+rows[rowNumber].temporaryRole+" was not found in server!") }
 					let daMember=bot.guilds.get(config.serverID).members.get(rows[rowNumber].userID);
 					if(!daMember){ return console.log("[ERROR] [ADMIN] [TEMPORARY-TAG] Member ID: "+rows[rowNumber].userID+" was not found in server!") }
@@ -80,14 +79,14 @@ setInterval(function(){
 					// REMOVE ROLE FROM USER
 					if(daMember.roles.has(rName.id)){daMember.removeRole(rName).catch(console.error)}
 					// REMOVE DATABASE ENTRY
-				sql.get(`DELETE FROM selfTemp_roles WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}"`).catch(console.error);
+				sqlite.get(`DELETE FROM roles_tempSelf WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}"`).catch(console.error);
 					return;
 				}
 			}
 		}
-	}).catch(()=>{
-		sql.run("CREATE TABLE IF NOT EXISTS selfTemp_roles (userID TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT)").catch(console.error);
-		return console.info(timeStamp(2)+"[ADMIN] Database CREATED");
+	})
+	.catch(err=>{
+		console.info("Error: "+err.message)
 	});
 },3600000);
 // 86400000 = 24hrs
@@ -108,10 +107,10 @@ function timeStamp(type){
 	if(!type || type===1){
 		return "`"+mo+"/"+da+"/"+yr.toString().slice(2)+"` **@** `"+hr+":"+min+"` "
 	}
-	if(type===2) {
+	if(type===2){
 		return "["+yr+"/"+mo+"/"+da+" @ "+hr+":"+min+":"+sec+"] "
 	}
-	if(type===3) {
+	if(type===3){
 		return "`"+yr+"/"+mo+"/"+da+"` **@** `"+hr+":"+min+":"+sec+"`"
 	}
 }
@@ -124,6 +123,22 @@ function timeStamp(type){
 //
 bot.on('ready', () => {
 	console.info(timeStamp(2)+"-- DISCORD HELPBOT: "+bot.user.username+", USERS MODULE IS READY --");
+	
+	//
+	// DATABASE FILE AND TABLE CREATION
+	//
+	
+	// SELF TEMP ROLES
+	sqlite.run("CREATE TABLE IF NOT EXISTS roles_tempSelf (userID TEXT, userName TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT)")
+	.catch(err=>{
+		console.info("Error: "+err.message)
+	});
+	
+	// CHAT TRACKER
+	sqlite.run("CREATE TABLE IF NOT EXISTS chat_tracker (userId TEXT, userName TEXT, lastMsg TEXT, lastChan TEXT, lastDate TEXT, points INTEGER, level INTEGER)")
+	.catch(err=>{
+		console.info("Error: "+err.message)
+	});
 });
 
 
@@ -133,8 +148,10 @@ bot.on('ready', () => {
 // ##########################################################################
 bot.on('message', message => {
 	
+	[embedMSG,skip,msg1,msg2,command,args,args2,guild,member,channel,mentioned,channeled]=["","","","","","","","","","","",""];
+	
 	// STOP SCRIPT IF TEXT IS PRIVATE MESSAGE
-	if(message.channel.type==="dm"){ return }
+	if(message.channel.type==="dm"){ return } if(message.guild.id!==config.serverID){ return }
 	
 	// 
 	// UNOWN DETECTION
@@ -145,10 +162,10 @@ bot.on('message', message => {
 	FOLLOW THE STRUCTURE FROM YOUR POKEALARM SETTINGS, WHAT'S ON THE TITLE, WHAT SEPARATES WHAT INFO, ETchannel...
 	
 	*/
-	if(config.unownAlerts.enabled==="yes" && message.channel.id===config.unownAlerts.inputChannelID) {
+	if(config.unownAlerts.enabled==="yes" && message.channel.id===config.unownAlerts.inputChannelID){
 		
 		let etitle = message.embeds[0].title;
-			etitle = etitle.split(" ");
+			etitle = etitle.split(/ +/);
 		let eurl = message.embeds[0].url;
 		let edescription = message.embeds[0].description; edescription=edescription.slice(0, -27);
 		let eimg = message.embeds[0].thumbnail.url;
@@ -186,7 +203,7 @@ bot.on('message', message => {
 				// REMOVE ANY PREVIOUS LEVEL ROLE
 				for(var availbleRole=0;availbleRole<lvlRoles.length;availbleRole++){
 					// CHECK FOR ALL LEVEL ROLES SEE IF USER HAS ANY
-					oldRole=message.guild.roles.find("name", lvlRolesPrefix+lvlRoles[availbleRole]);
+					oldRole=message.guild.roles.find(role => role.name === lvlRolesPrefix+lvlRoles[availbleRole]);
 					
 					// OLD ROLE FOUND
 					if(oldRole && message.member.roles.has(oldRole.id)){
@@ -195,7 +212,7 @@ bot.on('message', message => {
 						message.member.removeRole(oldRole).then(()=>{
 							
 							// OLD ROLE REMOVED, NOW ADD NEW ROLE
-							newRole=message.guild.roles.find("name", lvlRolesPrefix+message.content);
+							newRole=message.guild.roles.find(role => role.name === lvlRolesPrefix+message.content);
 							if(newRole){message.member.addRole(newRole)}
 						}).catch(console.error);
 					}
@@ -204,7 +221,7 @@ bot.on('message', message => {
 				// OLD ROLE WAS NOT FOUND, CHECK IF LEVEL ROLE EXIST WHILE MAKING SURE USER'S INPUT IS JUST DIGIT/NUMBER
 				for(var userInput=0;userInput<lvlRoles.length;userInput++){
 					if(message.content===lvlRoles[userInput]){
-						newRole=message.guild.roles.find("name", lvlRolesPrefix+message.content);
+						newRole=message.guild.roles.find(role => role.name === lvlRolesPrefix+message.content);
 					}
 				}
 				
@@ -223,30 +240,92 @@ bot.on('message', message => {
 	
 	
 	// GET CHANNEL INFO
-	guild=message.guild; channel=message.channel; user=message.member; msg1=message.content; msg2=msg1.toLowerCase();
+	guild=message.guild; channel=message.channel; member=message.member; msg1=message.content; msg2=msg1.toLowerCase();
 	
 	// GET TAGGED USER
 	if(message.mentions.members.first()){mentioned=message.mentions.members.first();}
 	if(message.mentions.channels.first()){channeled=message.mentions.channels.first();}
 	
 	// REMOVE LETTER CASE (MAKE ALL LOWERCASE)
-	command=msg2.split(" ")[0]; command=command.slice(config.cmdPrefix.length);
+	command=msg2.split(/ +/)[0]; command=command.slice(config.cmdPrefix.length);
 	
 	// GET ARGUMENTS
-	args=msg1.split(" ").slice(1); skip="no";
+	args=msg1.split(/ +/).slice(1); args2=msg2.split(/ +/).slice(1); skip="no";
 	
 	// GET ROLES FROM CONFIG
-	let AdminR=guild.roles.find("name", config.adminRoleName); if(!AdminR){ AdminR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.adminRoleName); }
-	let ModR=guild.roles.find("name", config.modRoleName); if(!ModR){ ModR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.modRoleName); }
+	let AdminR=guild.roles.find(role => role.name === config.adminRoleName); if(!AdminR){ AdminR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.adminRoleName); }
+	let ModR=guild.roles.find(role => role.name === config.modRoleName); if(!ModR){ ModR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.modRoleName); }
+	
+	
+	
+	
+	//
+	// CHAT ACTIVITY
+	//
+	
+	//(userId TEXT, lastMsg TEXT, lastChan TEXT, lastDate TEXT, points INTEGER, level INTEGER)
+	if(member){
+		if(member.user){
+			if(!member.user.bot){
+				let antiAbuse=msg1.split(/ +/); let points2add=0;
+				if(antiAbuse.length>5){
+					if(antiAbuse.length>9){points2add=2.5}if(antiAbuse.length>14){points2add=3.5}
+					if(antiAbuse.length>19){points2add=4.5}if(antiAbuse.length>24){points2add=5.5}
+					if(antiAbuse.length>29){points2add=6.5}if(antiAbuse.length>34){points2add=7.5}
+					if(antiAbuse.length>39){points2add=8.5}if(antiAbuse.length>44){points2add=9.5}
+					if(antiAbuse.length>49){points2add=10.5}if(antiAbuse.length>54){points2add=11.5}
+					if(antiAbuse.length>59){points2add=13.5}if(antiAbuse.length>64){points2add=15}
+				}
+				let cleanMsg=message.content.replace(/"/g,"");
+				let curDate=new Date().getTime(); curDate=Math.floor(curDate);
+				sqlite.get("SELECT * FROM chat_tracker WHERE userId="+message.author.id)
+				.then(row => {
+					if (!row){
+						sqlite.run("INSERT INTO chat_tracker (userId, userName, lastMsg, lastChan, lastDate, points, level) VALUES (?,?,?,?,?,?,?)",
+							[message.author.id, message.author.username, message.content, message.channel.name, curDate, points2add, 0])
+						.catch(err=>{
+							console.info("⛔ Error: "+err.message)
+						});
+					}
+					else {
+						let curLevel=Math.floor(0.1 * Math.sqrt(row.points + 1));
+						let newPoints=row.points+points2add;
+						if (curLevel>row.level){
+							row.level=curLevel;
+							sqlite.run("UPDATE chat_tracker SET userName=?, lastMsg=?, lastChan=?, lastDate=?, points=?, level=? WHERE userId="+message.author.id,
+								[message.author.username, message.content, message.channel.name, curDate, newPoints, row.level])
+							.catch(err=>{
+								console.info("⛔ Error: "+err.message)
+							});
+							message.reply("You've leveled up! Your new level is: **"+curLevel+"**! 🎉 Keep the chat going 👍 !");
+						}
+						sqlite.run("UPDATE chat_tracker SET userName=?, lastMsg=?, lastChan=?, lastDate=?, points=? WHERE userId="+message.author.id,
+							[message.author.username, message.content, message.channel.name, curDate, newPoints])
+						.catch(err=>{
+							console.info("⛔ Error: "+err.message)
+						});
+					}
+				})
+				.catch(err=>{
+					console.info("⛔ Error: "+err.message)
+				});
+			}
+		}
+	}
+	//
+	//
+	//
+	
+	
 	
 	// MAKE SURE ITS A COMMAND
 	if(!message.content.startsWith(config.cmdPrefix)){ return }
 	
 	
 // ######################### COMMANDS #############################
-	if(command==="commands" || command==="help") {
-		if(args[0]==="mods") {
-			if(user.roles.has(ModR.id) || user.roles.has(AdminR.id)) {
+	if(command==="commands" || command==="help"){
+		if(args[0]==="mods"){
+			if(member.roles.has(ModR.id) || member.roles.has(AdminR.id)){
 				cmds="--- ** COMMANDS FOR MODS ** ---\n"
 					+"`!stats` \\\u00BB to display server's member stats\n"
 					+"`!info` \\\u00BB to display [user/server/bot] info\n"
@@ -270,8 +349,8 @@ bot.on('message', message => {
 				return message.reply("you are **NOT** allowed to use this command! \ntry using: `!commands` or `!commands devs` instead").catch(console.error); 
 			}
 		}
-		if(args[0]==="admin") {
-			if(user.id===config.ownerID || user.roles.has(AdminR.id)) {
+		if(args[0]==="admin"){
+			if(member.id===config.ownerID || member.roles.has(AdminR.id)){
 				cmds="--- ** COMMANDS FOR ADMINS ** ---\n"
 					+"`!settings` \\\u00BB manage bot settings such as:\n"
 					+"`invite`, `map`, `raidsmap`, `patreon`, `paypal`, `rules`, `mainchat`, `botchan`, "
@@ -283,7 +362,7 @@ bot.on('message', message => {
 			}
 		}
 		
-		if(args[0]==="devs") {
+		if(args[0]==="devs"){
 			cmds="--- ** COMMANDS FOR DEVs ** ---\n"
 				+"`!coverage`/`!zones` \\\u00BB for a map of our **scanned area**\n"
 				+"`!hash` \\\u00BB for **hashing** server status link\n"
@@ -296,7 +375,7 @@ bot.on('message', message => {
 				+"`!simplebot` \\\u00BB for __Jenner__'s `RM/WebHook` **simple** discord **bot** - in `JavaScript`";
 		}
 		
-		if(!args[0]) {
+		if(!args[0]){
 			cmds="";
 			if(config.mapMain.enabled==="yes"){ cmds += "`!map` \\\u00BB for the link to our **Live Web Map**\n" }
 			if(config.mapRaids.enabled==="yes"){ cmds += "`!raids` \\\u00BB for the link to our **Raids Web Map**\n" }
@@ -318,7 +397,9 @@ bot.on('message', message => {
 		if(channel.id!==config.botCmdsChannel.channelID){
 			if(config.mainChannel.voidHelpCmd==="yes"){
 				if(config.botCmdsChannel.warning==="yes"){
-					message.reply("this command can **only** be used at <#"+config.botCmdsChannel.channelID+">");
+					if(channel.id!=="356730427156987905"){
+						message.reply("this command can **only** be used at <#"+config.botCmdsChannel.channelID+">");
+					}
 				}
 				return
 			}
@@ -329,9 +410,9 @@ bot.on('message', message => {
 	
 	
 // ######################### RULES #############################
-	if(command==="rules" && config.rulesChannel.enabled==="yes") {
+	if(command==="rules" && config.rulesChannel.enabled==="yes"){
 		message.delete();
-		if(!mentioned) {
+		if(!mentioned){
 			return channel.send("Please __READ__ our **RULES** at \\\u00BB <#"+config.rulesChannel.channelID+">").catch(console.error);
 		} 
 		else {
@@ -343,7 +424,7 @@ bot.on('message', message => {
 	
 	
 // ######################### SUBSCRIPTION #############################
-	if(command==="patreon" || command==="subscribe") {
+	if(command==="patreon" || command==="subscribe"){
 		if(config.patreon.enabled==="yes"){
 			let embedMSG={
 				'color': 0xFF0000,
@@ -360,7 +441,7 @@ bot.on('message', message => {
 	
 	
 // ######################### DONATE #############################
-	if(command==="paypal" || command==="donate") {
+	if(command==="paypal" || command==="donate"){
 		if(config.paypal.enabled==="yes"){
 			let embedMSG={
 				'color': 0xFF0000,
@@ -377,14 +458,29 @@ bot.on('message', message => {
 	
 	
 // ######################### TEAM ROLES #############################
-	if(command==="team") {
-		message.delete();
+	if(command==="team"){
 		if(config.teamRoles.enabled==="yes"){
 			
 			let imgSrc="https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/pokeTeamsTrans/"
 			let imgAmt=["_01.png","_02.png","_03.png","_04.png"];
-			let teamColor="", daTeamRole="", teamLeadRoles=[];
-			let teamSuffix=["🔥","⚡","❄"];			
+			let teamProps={
+					"valor": {
+						"name": "Valor",
+						"color": 0xFF0000,
+						"suffix": "🔥"
+					},
+					"instinct": {
+						"name": "Instinct",
+						"color": 0xF1C40F,
+						"suffix": "⚡"
+					},
+					"mystic": {
+						"name": "Mystic",
+						"color": 0x2A74F8,
+						"suffix": "❄"
+					}
+				}
+			let daTeamRole="", teamLeadRoles=[], teamSuffix="";
 			
 			if(!args[0]){
 				embedMSG={
@@ -397,270 +493,125 @@ bot.on('message', message => {
 				return channel.send({embed: embedMSG});
 			}
 			
-			// TEAM VALOR
-			if(args[0].startsWith("valor")){
-				teamColor=0xFF0000; let teamName="Valor";
-				if(config.teamRoles.valor.leadRoleIDs[0]){teamLeadRoles=teamLeadRoles.concat(config.teamRoles.valor.leadRoleIDs)}
-				daTeamRole=guild.roles.find("name", teamName);if(!daTeamRole){ return console.info("Team role does not exist") }
+			// GLOBAL TEAM HANDLER
+			if(args2[0].startsWith("valor") || args2[0].startsWith("instinct") || args2[0].startsWith("mystic")){
+				if(config.teamRoles[args2[0]].leadRoleIDs[0]){teamLeadRoles=teamLeadRoles.concat(config.teamRoles[args2[0]].leadRoleIDs)}
+				
+				teamSuffix=teamProps[args2[0]].suffix;
+				daTeamRole=guild.roles.find(role => role.name === teamProps[args2[0]].name);if(!daTeamRole){ return channel.send("⛔ **[**`ERROR`**]**: Team role does not exist in `Server`") }
 				
 				// CHECK IF TEAM CHANNEL PRESENT
-				if(config.teamRoles.valor.channelID){
+				if(config.teamRoles[args2[0]].channelID){
 					
 					// TEAM CHANNEL PRESENT, CHECK IF COMMAND WAS TYPED IN TEAM CHANNEL
-					if(channel.id===config.teamRoles.valor.channelID){
+					if(channel.id===config.teamRoles[args2[0]].channelID){
 						
 						// COMMAND TYPED IN CHANNEL, CHECK IF TEAM LEADS ARE DEFINED
-						if(config.teamRoles.valor.leadIDs[0]){
+						if(config.teamRoles[args2[0]].leadIDs[0]){
 							
 							// TEAM LEADS FOUND, CHECK IF TEAM LEADS TYPED THE COMMAND
-							if(config.teamRoles.valor.leadIDs.some(id=>id.includes(user.id)) || teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+							if(config.teamRoles[args2[0]].leadIDs.some(id=>id.includes(member.id)) || teamLeadRoles.some(id=>member.roles.has(id)) || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 								
 								// TEAM LEAD TYPED COMMAND, CHECK IF USER WAS MENTIONED
 								if(mentioned){
-									mentioned=message.mentions.members.first();
 									mentioned.addRole(daTeamRole)
 										.then(()=>{
-											mentioned.setNickname(mentioned.user.username+teamSuffix[0])
+											mentioned.setNickname(mentioned.user.username+teamSuffix)
 											.catch(err=>{
-												channel.send("⚠ Error:\n"+err.message);
-												return console.info(err.message)
+												return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
 											})
 										})
 										.catch(err=>{
-											channel.send("⚠ Error:\n"+err.message);
-											return console.info(err.message)
+											return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
 										});
 									
 									let embedMSG={
-										'color': teamColor,
+										'color': teamProps[args2[0]].color,
 										'title': 'Welcome "'+mentioned.user.username+'"!!!',
-										'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-										'description': mentioned+' has joined team **'+teamName+'**!\n'
-											+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+user
+										'thumbnail': {'url': imgSrc+teamProps[args2[0]].name+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
+										'description': mentioned+' has joined team **'+teamProps[args2[0]].name+'**!\n'
+											+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+member
 									};
 									return channel.send({embed: embedMSG}).catch(console.error)
 								}
+								return channel.send("⛔ **[**`ERROR`**]**: `@mention` not found");
 							}
+							return channel.send("⛔ **[**`ERROR`**]**: You are not allowed to use this command only Leads/CoLeads")
 						}
+						
+						// NO TEAM LEAD SO SELF ASSIGNED
+						member.addRole(daTeamRole)
+							.then(()=>{
+								member.setNickname(member.user.username+teamSuffix)
+								.catch(err=>{
+									return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
+								})
+							})
+							.catch(err=>{
+								return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
+							});
+						
+						let embedMSG={
+							'color': teamProps[args2[0]].color,
+							'title': 'Welcome "'+member.user.username+'"!!!',
+							'thumbnail': {'url': imgSrc+teamProps[args2[0]].name+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
+							'description': member+' has joined team **'+teamProps[args2[0]].name+'**!'
+						};
+						return channel.send({embed: embedMSG}).catch(console.error)
 					}
+					return channel.send("⛔ **[**`ERROR`**]**: Channel for "+args2[0]+" is assigned, try it in their own channel");
 				}
 				
 				// NO TEAM CHANNEL PRESENT, DEFAULT TO #TEAMS CHANNEL
 				if(channel.id===config.teamRoles.channelID){
 					
 					// CHECK IF TEAM LEADS ARE DEFINED
-					if(config.teamRoles.valor.leadIDs[0]){
+					if(config.teamRoles[args2[0]].leadIDs[0]){
 						
 						// TEAM LEADS FOUND, CHECK IF TEAM LEADS TYPED THE COMMAND
-						if(config.teamRoles.valor.leadIDs.some(id=>id.includes(user.id)) || teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+						if(config.teamRoles[args2[0]].leadIDs.some(id=>id.includes(member.id)) || teamLeadRoles.some(id=>member.roles.has(id)) || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 							
 							// TEAM LEAD TYPED COMMAND, CHECK IF USER WAS MENTIONED
 							if(mentioned){
-								mentioned=message.mentions.members.first();
 								mentioned.addRole(daTeamRole)
-									.catch(err=>{
-										channel.send("⚠ Error:\n"+err.message);
-										return console.info(err.message)
-									});
-								let embedMSG={
-									'color': teamColor,
-									'title': 'Welcome "'+mentioned.user.username+'"!!!',
-									'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-									'description': mentioned+' has joined team **'+teamName+'**!\n'
-										+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+user
-								};
-								return channel.send({embed: embedMSG}).catch(console.error);
-							}
-						}
-					}
-					
-					// NO TEAM LEAD PRESENT, SELF TEAM ROLE ENABLED
-					user.addRole(daTeamRole).catch(console.error);
-					let embedMSG={
-						'color': teamColor,
-						'title': 'Welcome "'+user.user.username+'"!!!',
-						'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-						'description': user+' has joined team **'+teamName+'**!\n'
-							+'**On**: '+timeStamp(1)
-					};
-					return channel.send({embed: embedMSG}).catch(console.error);
-				}
-			}
-			
-			// TEAM INSTINCT
-			if(args[0].startsWith("instinct")){
-				teamColor=0xF1C40F; let teamName="Instinct";
-				if(config.teamRoles.instinct.leadRoleIDs[0]){teamLeadRoles=teamLeadRoles.concat(config.teamRoles.instinct.leadRoleIDs)}
-				daTeamRole=guild.roles.find("name", teamName);if(!daTeamRole){ return console.info("Team role does not exist") }
-				
-				// CHECK IF TEAM CHANNEL PRESENT
-				if(config.teamRoles.instinct.channelID){
-					
-					// TEAM CHANNEL PRESENT, CHECK IF COMMAND WAS TYPED IN TEAM CHANNEL
-					if(channel.id===config.teamRoles.instinct.channelID){
-						
-						// COMMAND TYPED IN CHANNEL, CHECK IF TEAM LEADS ARE DEFINED
-						if(config.teamRoles.instinct.leadIDs[0]){
-							
-							// TEAM LEADS FOUND, CHECK IF TEAM LEADS TYPED THE COMMAND
-							if(config.teamRoles.instinct.leadIDs.some(id=>id.includes(user.id)) || teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
-								
-								// TEAM LEAD TYPED COMMAND, CHECK IF USER WAS MENTIONED
-								if(mentioned){
-									mentioned=message.mentions.members.first();
-									mentioned.addRole(daTeamRole)
-										.then(()=>{
-											mentioned.setNickname(mentioned.user.username+teamSuffix[1])
-											.catch(err=>{
-												channel.send("⚠ Error:\n"+err.message);
-												return console.info(err.message)
-											})
-										})
+									.then(()=>{
+										mentioned.setNickname(mentioned.user.username+teamSuffix)
 										.catch(err=>{
-											channel.send("⚠ Error:\n"+err.message);
-											return console.info(err.message)
-										});
-									
-									let embedMSG={
-										'color': teamColor,
-										'title': 'Welcome "'+mentioned.user.username+'"!!!',
-										'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-										'description': mentioned+' has joined team **'+teamName+'**!\n'
-											+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+user
-									};
-									return channel.send({embed: embedMSG}).catch(console.error)
-								}
-							}
-						}
-					}
-				}
-				
-				// NO TEAM CHANNEL PRESENT, DEFAULT TO #TEAMS CHANNEL
-				if(channel.id===config.teamRoles.channelID){
-					
-					// CHECK IF TEAM LEADS ARE DEFINED
-					if(config.teamRoles.instinct.leadIDs[0]){
-						
-						// TEAM LEADS FOUND, CHECK IF TEAM LEADS TYPED THE COMMAND
-						if(config.teamRoles.instinct.leadIDs.some(id=>id.includes(user.id)) || teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
-							
-							// TEAM LEAD TYPED COMMAND, CHECK IF USER WAS MENTIONED
-							if(mentioned){
-								mentioned=message.mentions.members.first();
-								mentioned.addRole(daTeamRole)
-									.catch(err=>{
-										channel.send("⚠ Error:\n"+err.message);
-										return console.info(err.message)
-									});
-								let embedMSG={
-									'color': teamColor,
-									'title': 'Welcome "'+mentioned.user.username+'"!!!',
-									'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-									'description': mentioned+' has joined team **'+teamName+'**!\n'
-										+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+user
-								};
-								return channel.send({embed: embedMSG}).catch(console.error);
-							}
-						}
-					}
-					
-					// NO TEAM LEAD PRESENT, SELF TEAM ROLE ENABLED
-					user.addRole(daTeamRole).catch(console.error);
-					let embedMSG={
-						'color': teamColor,
-						'title': 'Welcome "'+user.user.username+'"!!!',
-						'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-						'description': user+' has joined team **'+teamName+'**!\n'
-							+'**On**: '+timeStamp(1)
-					};
-					return channel.send({embed: embedMSG}).catch(console.error);
-				}
-			}
-			
-			// TEAM MYSTIC
-			if(args[0].startsWith("mystic")){
-				teamColor=0x2A74F8; let teamName="Mystic";
-				if(config.teamRoles.mystic.leadRoleIDs[0]){teamLeadRoles=teamLeadRoles.concat(config.teamRoles.mystic.leadRoleIDs)}
-				daTeamRole=guild.roles.find("name", teamName);if(!daTeamRole){ return console.info("Team role does not exist") }
-				
-				// CHECK IF TEAM CHANNEL PRESENT
-				if(config.teamRoles.mystic.channelID){
-					
-					// TEAM CHANNEL PRESENT, CHECK IF COMMAND WAS TYPED IN TEAM CHANNEL
-					if(channel.id===config.teamRoles.mystic.channelID){
-						
-						// COMMAND TYPED IN CHANNEL, CHECK IF TEAM LEADS ARE DEFINED
-						if(config.teamRoles.mystic.leadIDs[0]){
-							
-							// TEAM LEADS FOUND, CHECK IF TEAM LEADS TYPED THE COMMAND
-							if(config.teamRoles.mystic.leadIDs.some(id=>id.includes(user.id)) || teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
-								
-								// TEAM LEAD TYPED COMMAND, CHECK IF USER WAS MENTIONED
-								if(mentioned){
-									mentioned=message.mentions.members.first();
-									mentioned.addRole(daTeamRole)
-										.then(()=>{
-											mentioned.setNickname(mentioned.user.username+teamSuffix[2])
-											.catch(err=>{
-												channel.send("⚠ Error:\n"+err.message);
-												return console.info(err.message)
-											})
+											return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
 										})
-										.catch(err=>{
-											channel.send("⚠ Error:\n"+err.message);
-											return console.info(err.message)
-										});
-									
-									let embedMSG={
-										'color': teamColor,
-										'title': 'Welcome "'+mentioned.user.username+'"!!!',
-										'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-										'description': mentioned+' has joined team **'+teamName+'**!\n'
-											+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+user
-									};
-									return channel.send({embed: embedMSG}).catch(console.error)
-								}
-							}
-						}
-					}
-				}
-				
-				// NO TEAM CHANNEL PRESENT, DEFAULT TO #TEAMS CHANNEL
-				if(channel.id===config.teamRoles.channelID){
-					
-					// CHECK IF TEAM LEADS ARE DEFINED
-					if(config.teamRoles.mystic.leadIDs[0]){
-						
-						// TEAM LEADS FOUND, CHECK IF TEAM LEADS TYPED THE COMMAND
-						if(config.teamRoles.mystic.leadIDs.some(id=>id.includes(user.id)) || teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
-							
-							// TEAM LEAD TYPED COMMAND, CHECK IF USER WAS MENTIONED
-							if(mentioned){
-								mentioned=message.mentions.members.first();
-								mentioned.addRole(daTeamRole)
+									})
 									.catch(err=>{
-										channel.send("⚠ Error:\n"+err.message);
-										return console.info(err.message)
+										return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
 									});
 								let embedMSG={
-									'color': teamColor,
+									'color': teamProps[args2[0]].color,
 									'title': 'Welcome "'+mentioned.user.username+'"!!!',
-									'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-									'description': mentioned+' has joined team **'+teamName+'**!\n'
-										+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+user
+									'thumbnail': {'url': imgSrc+teamProps[args2[0]].name+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
+									'description': mentioned+' has joined team **'+teamProps[args2[0]].name+'**!\n'
+										+'**On**: '+timeStamp(1)+'\n**VerifiedBy**: '+member
 								};
 								return channel.send({embed: embedMSG}).catch(console.error);
 							}
 						}
+						return channel.send("⛔ **[**`ERROR`**]**: You are not allowed to use this command only Leads/CoLeads")
 					}
 					
 					// NO TEAM LEAD PRESENT, SELF TEAM ROLE ENABLED
-					user.addRole(daTeamRole).catch(console.error);
+					member.addRole(daTeamRole)
+						.then(()=>{
+							member.setNickname(member.user.username+teamSuffix)
+							.catch(err=>{
+								return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
+							})
+						})
+						.catch(err=>{
+							return channel.send("⛔ **[**`ERROR`**]**: \n"+err.message)
+						});
 					let embedMSG={
-						'color': teamColor,
-						'title': 'Welcome "'+user.user.username+'"!!!',
-						'thumbnail': {'url': imgSrc+teamName+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
-						'description': user+' has joined team **'+teamName+'**!\n'
+						'color': teamProps[args2[0]].color,
+						'title': 'Welcome "'+member.user.username+'"!!!',
+						'thumbnail': {'url': imgSrc+teamProps[args2[0]].name+imgAmt[Math.floor(Math.random()*imgAmt.length)]},
+						'description': member+' has joined team **'+teamProps[args2[0]].name+'**!\n'
 							+'**On**: '+timeStamp(1)
 					};
 					return channel.send({embed: embedMSG}).catch(console.error);
@@ -670,17 +621,16 @@ bot.on('message', message => {
 			// REMOVE TEAM ROLE
 			if(args[0].startsWith("r")){
 				if(mentioned){
-					mentioned=message.mentions.members.first();
 					let daTeamRoles=["Valor","valor","Instinct","instinct","Mystic","mystic"];
 					for(var x="0";x<daTeamRoles.length;x++){
-						rRole=guild.roles.find("name", daTeamRoles[x]);
+						rRole=guild.roles.find(role => role.name === daTeamRoles[x]);
 						if(rRole){
 							if(mentioned.roles.has(rRole.id)){
-								mentioned.removeRole(rRole).catch(console.error);
+								mentioned.removeRole(rRole).catch(err=>console.info(err.message));
 							}
 						}
 					}
-					return channel.send("✅ "+user+", I've removed `ALL` **team** roles from user: "+mentioned);
+					return channel.send("✅ "+member+", I've removed `ALL` **team** roles from user: "+mentioned);
 				}
 			}
 		}return
@@ -714,23 +664,22 @@ bot.on('message', message => {
 			let newRole=""; let oldRole="";
 			
 			// ONLY LEADS CAN ASSIGN ROLE
-			if(teamLeadRoles.some(id=>user.roles.has(id)) || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
-				if(!parseFloat(args[0])){return channel.send("⚠ **Error**:\n"+user+", second value is not a number")}
-				if(!mentioned){return channel.send("⚠ **Error**:\n"+user+", please mention a user!\n`!lvl ## @mention`")}
+			if(teamLeadRoles.some(id=>member.roles.has(id)) || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
+				if(!parseFloat(args[0])){return channel.send("⚠ **Error**:\n"+member+", second value is not a number")}
+				if(!mentioned){return channel.send("⚠ **Error**:\n"+member+", please mention a user!\n`!lvl ## @mention`")}
 				
 				// REMOVE ANY PREVIOUS LEVEL ROLE
 				for(var availbleRole=0;availbleRole<lvlRoles.length;availbleRole++){
 					// CHECK FOR ALL LEVEL ROLES SEE IF USER HAS ANY
-					oldRole=guild.roles.find("name", lvlRolesPrefix+lvlRoles[availbleRole]);
+					oldRole=guild.roles.find(role => role.name === lvlRolesPrefix+lvlRoles[availbleRole]);
 					
 					// OLD ROLE FOUND
 					if(oldRole && guild.members.get(mentioned.id).roles.has(oldRole.id)){
-						mentioned=message.mentions.members.first();
 						// ATTEMPT TO REMOVE OLD ROLE
 						mentioned.removeRole(oldRole).then(()=>{
 							
 							// OLD ROLE REMOVED, NOW ADD NEW ROLE
-							newRole=guild.roles.find("name", lvlRolesPrefix+args[0]);
+							newRole=guild.roles.find(role => role.name === lvlRolesPrefix+args[0]);
 							if(newRole){mentioned.addRole(newRole)}
 						}).catch(console.error);
 					}
@@ -739,19 +688,18 @@ bot.on('message', message => {
 				// OLD ROLE WAS NOT FOUND, CHECK IF LEVEL ROLE EXIST WHILE MAKING SURE USER'S INPUT IS JUST DIGIT/NUMBER
 				for(var userInput=0;userInput<lvlRoles.length;userInput++){
 					if(args[0]===lvlRoles[userInput]){
-						newRole=guild.roles.find("name", lvlRolesPrefix+args[0]);
+						newRole=guild.roles.find(role => role.name === lvlRolesPrefix+args[0]);
 					}
 				}
 				
 				// NEW ROLE IS VALID, ROLE WAS FOUND, ATTEMPT TO ADD IT
 				if(newRole){
-					mentioned=message.mentions.members.first();
 					mentioned.addRole(newRole).catch(console.error);
 					return channel.send("🎉 Congratulations to: "+mentioned+"! They are now **Level: "+args[0]+"** 🎉 ")
 				}
 				
 				// PICTURE IS FINE, BUT TEXT MESSAGE IS NOT A NUMBER - COULD BE CHAT - OR ISNOT ONE OF THE VALID NUMBERS... WARN THEM!
-				return channel.send("⚠ **Error**:\n"+user+", that's not a **valid** level!\n`"+lvlRoles+"`")
+				return channel.send("⚠ **Error**:\n"+member+", that's not a **valid** level!\n`"+lvlRoles+"`")
 			}
 		}return
 	}
@@ -759,23 +707,23 @@ bot.on('message', message => {
 	
 	
 // ######################### WEATHER #############################
-	if(command==="weather") {
+	if(command==="weather"){
 		if(config.weather.enabled!=="yes"){ return }
 		if(!config.weather.apiKey){
 			return console.log(timeStamp(2)+"[ERROR]: Someone used !weather command, but no API key present in config");
 		}
 		let p, kelToFarMain, kelToFarMin, kelToFarMax, emojiWeather, embedIcon, pokeTypes, windDir="", updatedTime; 
 		if(!parseFloat(args[0])){
-			return channel.send("⛔ Invalid **zipcode** "+user+", it must be 5 numerical digits!");
+			return channel.send("⛔ Invalid **zipcode** "+member+", it must be 5 numerical digits!");
 		}
 		let zipCode=parseFloat(args[0]);
 		
 		if(zipCode>=config.weather.zipCodeMax || zipCode<=config.weather.zipCodeMin){
-			return channel.send("⛔ Invalid **zipcode** "+user+", I **only** accept local zipcodes! Can't check __New York__ or **Japan**!");
+			return channel.send("⛔ Invalid **zipcode** "+member+", I **only** accept local zipcodes! Can't check __New York__ or **Japan**!");
 		}
 		
 		let url="http://api.openweathermap.org/data/2.5/weather?zip="+zipCode+"&APPID="+config.weather.apiKey;
-		request(url, function(error,response,body){ p=JSON.parse(body); if(p.main===undefined){ return console.info("Location not found") }
+		request(url, function(error,response,body){ p=JSON.parse(body); if(p.main===undefined){ return channel.send("⛔ **[**`ERROR`**]**: \n"+p.message) }
 			// TEMPERATURE KELVIN TO FAHRENHEIT
 			kelToFarMain=parseFloat(p.main.temp); kelToFarMain=Math.round(((kelToFarMain * (9/5)) - 459.67).toString());
 			kelToFarMin=parseFloat(p.main.temp_min); kelToFarMin=Math.round(((kelToFarMin * (9/5)) - 459.67).toString());
@@ -914,9 +862,6 @@ bot.on('message', message => {
 	
 // ############################## USER TEMPORARY ROLES ##############################
 	if(command.startsWith("tag")){
-		if(message.mentions.members){mentioned=message.mentions.members.first()}
-		// CREATE DATABASE TABLE 
-		sql.run("CREATE TABLE IF NOT EXISTS selfTemp_roles (userID TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT)").catch(console.error);
 		// message.delete();
 		let dateMultiplier=86400000; 
 		if(!args[0]){
@@ -931,6 +876,7 @@ bot.on('message', message => {
 			return channel.send({embed: embedMSG});
 		}
 		
+		// CHECK IF CHANNEL DEFINED, THEN USE THAT CHANNEL
 		if(config.selfTempRoles.channelID && channel.id!==config.selfTempRoles.channelID){
 			return message.reply("not the place to tag yourself! You should try: <#"+config.selfTempRoles.channelID+">")
 		}
@@ -939,12 +885,12 @@ bot.on('message', message => {
 		if(!mentioned){
 			// CHECK DATABASE FOR ROLES
 			if(args[0]==="check"){
-				sql.all(`SELECT * FROM selfTemp_roles WHERE userID="${user.id}"`).then(rows => {
-					if (!rows[0]) {
-						return channel.send("⚠ "+user+", you are **NOT** in my `DataBase`! ");
+				sqlite.all(`SELECT * FROM roles_tempSelf WHERE userID="${member.id}"`).then(rows => {
+					if (!rows[0]){
+						return channel.send("⚠ "+member+", you are **NOT** in my `DataBase`! ");
 					}
 					else {
-						let daRolesFindings="✅ "+user+"'s TempTag(s):\n";
+						let daRolesFindings="✅ "+member+"'s TempTag(s):\n";
 						for(rowNumber="0"; rowNumber<rows.length; rowNumber++){
 							let startDateVal=new Date(); startDateVal.setTime(rows[rowNumber].startDate);
 							startDateVal=(startDateVal.getMonth()+1)+"/"+startDateVal.getDate()+"/"+startDateVal.getFullYear();
@@ -961,15 +907,15 @@ bot.on('message', message => {
 				// ROLES WITH SPACES - NEW
 				let daRoles="";if(!args[2]){daRoles=args[1]}else{daRoles="";for(var x=1;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
 				
-				sql.get(`SELECT * FROM selfTemp_roles WHERE userID="${user.id}" AND temporaryRole="${daRoles}"`).then(row => {
+				sqlite.get(`SELECT * FROM roles_tempSelf WHERE userID="${member.id}" AND temporaryRole="${daRoles}"`).then(row => {
 					if(!row){
-						return message.reply("⚠ [ERROR] "+user+", you are __NOT__ in my `DataBase`");
+						return message.reply("⚠ [ERROR] "+member+", you are __NOT__ in my `DataBase`");
 					}
 					else {
-						let theirRole=guild.roles.find('name', row.temporaryRole);
-						if(user.roles.has(theirRole.id)){user.removeRole(theirRole).catch(console.error);}
-						sql.get(`DELETE FROM selfTemp_roles WHERE userID="${user.id}" AND temporaryRole="${daRoles}"`).then(row => {
-							return channel.send("⚠ "+user+", you have **lost** your temporary tag: **"+theirRole.name+"** 😅");
+						let theirRole=guild.roles.find(role => role.name === row.temporaryRole);
+						if(member.roles.has(theirRole.id)){member.removeRole(theirRole).catch(console.error);}
+						sqlite.get(`DELETE FROM roles_tempSelf WHERE userID="${member.id}" AND temporaryRole="${daRoles}"`).then(row => {
+							return channel.send("⚠ "+member+", you have **lost** your temporary tag: **"+theirRole.name+"** 😅");
 						});
 					}
 				}).catch(console.error); return
@@ -981,7 +927,7 @@ bot.on('message', message => {
 				let daRoles="";if(!args[2]){daRoles=args[1]}else{daRoles="";for(var x=1;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
 				
 				// CHECK ROLE EXIST
-				let rName=guild.roles.find('name', daRoles);
+				let rName=guild.roles.find(role => role.name === daRoles);
 				if(!rName){
 					return message.reply("I couldn't find such role in the server... check `pinned` messages or ask **staff** to add it!");
 				}
@@ -991,18 +937,18 @@ bot.on('message', message => {
 					return message.reply("this **tag** is __NOT__ allowed... please make sure you read `pinned` messages to see which tags are **ALLOWED**!");
 				}
 				// ADD MEMBER TO DATASE, AND ADD THE ROLE TO MEMBER
-				sql.get(`SELECT * FROM selfTemp_roles WHERE userID="${user.id}" AND temporaryRole="${daRoles}"`).then(row => {
-					if (!row) {
+				sqlite.get(`SELECT * FROM roles_tempSelf WHERE userID="${member.id}" AND temporaryRole="${daRoles}"`).then(row => {
+					if (!row){
 						let curDate=new Date().getTime(); let finalDateDisplay=new Date(); 
 						let finalDate=((args[0])*(dateMultiplier)); finalDate=((curDate)+(finalDate));
 						finalDateDisplay.setTime(finalDate); finalDateDisplay=(finalDateDisplay.getMonth()+1)+"/"+finalDateDisplay.getDate()+"/"+finalDateDisplay.getFullYear();
 						
-						sql.run("INSERT INTO selfTemp_roles (userID, temporaryRole, startDate, endDate) VALUES (?, ?, ?, ?)", 
-							[user.id, daRoles, curDate, finalDate]);
-						let theirRole=guild.roles.find('name', daRoles);
-						user.addRole(theirRole).catch(console.error);
-						console.log(timeStamp(2)+"[ADMIN] [TEMPORARY-TAG] \""+user.user.username+"\" ("+user.id+") was given tag: \""+daRoles+"\"");
-						return channel.send("🎉 "+user+", you been given a **temporary** tag: **"+daRoles+"**, enjoy! You will lose this **tag** on: `"+finalDateDisplay+"`");
+						sqlite.run("INSERT INTO roles_tempSelf (userID, userName, temporaryRole, startDate, endDate) VALUES (?,?,?,?,?)", 
+							[member.id, member.user.username, daRoles, curDate, finalDate]);
+						let theirRole=guild.roles.find(role => role.name === daRoles);
+						member.addRole(theirRole).catch(console.error);
+						console.log(timeStamp(2)+"[ADMIN] [TEMPORARY-TAG] \""+member.user.username+"\" ("+member.id+") was given tag: \""+daRoles+"\"");
+						return channel.send("🎉 "+member+", you been given a **temporary** tag: **"+daRoles+"**, enjoy! You will lose this **tag** on: `"+finalDateDisplay+"`");
 					}
 					else {
 						return message.reply("you already have this **temporary** tag... try using `!temprole remove "+daRoles+"` if you want to **change** the endDate.");
@@ -1011,14 +957,13 @@ bot.on('message', message => {
 			}
 		}
 		
-		if(message.mentions){mentioned=message.mentions.members.first()}
 		// CHECK OTHERS - ADMINS
 		if(mentioned){
-			if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+			if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 				// CHECK DATABASE FOR ROLES
 				if(args[0]==="check"){
-					sql.all(`SELECT * FROM selfTemp_roles WHERE userID="${mentioned.id}"`).then(rows => {
-						if (!rows[0]) {
+					sqlite.all(`SELECT * FROM roles_tempSelf WHERE userID="${mentioned.id}"`).then(rows => {
+						if (!rows[0]){
 							return channel.send("⚠ "+mentioned+" is **NOT** in my `DataBase`, "+user);
 						}
 						else {
@@ -1036,18 +981,17 @@ bot.on('message', message => {
 				}
 				// REMOVE MEMBER FROM DATABASE
 				if(args[0]==="remove"){
-					mentioned=message.mentions.members.first();
 					// ROLES WITH SPACES - NEW
 					let daRoles="";if(!args[3]){daRoles=args[2]}else{daRoles="";for(var x=2;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
 					
-					sql.get(`SELECT * FROM selfTemp_roles WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
+					sqlite.get(`SELECT * FROM roles_tempSelf WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
 						if(!row){
 							return message.reply("⚠ [ERROR] "+mentioned+" is __NOT__ in my `DataBase`");
 						}
 						else {
-							let theirRole=guild.roles.find('name', row.temporaryRole);
+							let theirRole=guild.roles.find(role => role.name === row.temporaryRole);
 							if(mentioned.roles.has(theirRole.id)){mentioned.removeRole(theirRole).catch(console.error);}
-							sql.get(`DELETE FROM selfTemp_roles WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
+							sqlite.get(`DELETE FROM roles_tempSelf WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
 								return channel.send("⚠ "+mentioned+" have **lost** their temporary tag: **"+theirRole.name+"** 😅");
 							});
 						}
@@ -1071,22 +1015,21 @@ bot.on('message', message => {
 				}
 				
 				// CHECK ROLE EXIST
-				let rName=guild.roles.find('name', daRoles);
+				let rName=guild.roles.find(role => role.name === daRoles);
 				if(!rName){
 					return message.reply("I couldn't find such role, please try searching for it first: `!roles search <ROLE-NAME>`");
 				}
 				
 				// ADD MEMBER TO DATASE, AND ADD THE ROLE TO MEMBER
-				sql.get(`SELECT * FROM selfTemp_roles WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
-					mentioned=message.mentions.members.first(); 
-					if (!row) {
+				sqlite.get(`SELECT * FROM roles_tempSelf WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
+					if (!row){
 						let curDate=new Date().getTime(); let finalDateDisplay=new Date(); 
 						let finalDate=((args[1])*(dateMultiplier)); finalDate=((curDate)+(finalDate));
 						finalDateDisplay.setTime(finalDate); finalDateDisplay=(finalDateDisplay.getMonth()+1)+"/"+finalDateDisplay.getDate()+"/"+finalDateDisplay.getFullYear();
 						
-						sql.run("INSERT INTO selfTemp_roles (userID, temporaryRole, startDate, endDate) VALUES (?, ?, ?, ?)", 
-							[mentioned.id, daRoles, curDate, finalDate]);
-						let theirRole=guild.roles.find('name', daRoles);
+						sqlite.run("INSERT INTO roles_tempSelf (userID, userName, temporaryRole, startDate, endDate) VALUES (?,?,?,?,?)", 
+							[mentioned.id, mentioned.user.username, daRoles, curDate, finalDate]);
+						let theirRole=guild.roles.find(role => role.name === daRoles);
 						mentioned.addRole(theirRole).catch(console.error);
 						console.log(timeStamp(2)+"[ADMIN] [TEMPORARY-TAG] \""+mentioned.user.username+"\" ("+mentioned.id+") was given tag: \""+daRoles+"\"");
 						return channel.send("🎉 "+mentioned+" has been given a **temporary** role of: **"+daRoles+"**, enjoy! They will lose this role on: `"+finalDateDisplay+"`");
@@ -1102,70 +1045,76 @@ bot.on('message', message => {
 	
 	
 // ######################### SERVER STATUS #############################
-	if(command==="hash") {
+	if(command==="hash"){
 		return channel.send("Hashing Server Status: https://status.buddyauth.com/ ").catch(console.error);
 	}
-	if(command==="ptc") {
+	if(command==="ptc"){
 		return channel.send("PokemonTrainerClub Server Status: http://cmmcd.com/PokemonTrainerClub/ ").catch(console.error);
 	}
 	
 // ######################### OTHER LINKS #############################
-	if(command==="map" && config.mapMain.enabled==="yes") {
+	if(command==="map" && config.mapMain.enabled==="yes"){
 		return channel.send("Our official **webmap**: \n"+config.mapMain.url).catch(console.error)
 	}
-	if(command==="raids" || command==="raidmap" || command==="raid") {
+	if(command==="raids" || command==="raidmap" || command==="raid"){
 		if(config.mapRaids.enabled==="yes"){
 			return channel.send("Our official **raids webmap**: \n"+config.mapRaids.url).catch(console.error)
 		}
 	}
-	if(command==="coverage" && config.mapCoverage.enabled==="yes") {
+	if(command==="coverage" && config.mapCoverage.enabled==="yes"){
 		return channel.send("Map of **coverage** area: \n"+config.mapCoverage.url+"\n"
 			+"...and for Zones/Systems map: `!zones`").catch(console.error)
 	}
-	if(command==="zones" && config.mapZones.enabled==="yes") {
+	if(command==="zones" && config.mapZones.enabled==="yes"){
 		return channel.send("Map of the **Zones** and Servers: \n "+config.mapZones.url+" \n"
 			+"...and for Coverage map: `!coverage`").catch(console.error)
 	}
-	if(command==="hoods" || command==="neighborhoods") {
+	if(command==="hoods" || command==="neighborhoods"){
 		if(config.mapHoods.enabled==="yes"){
 			return channel.send("Our **Neighborhoods**:\n"+config.mapHoods.url).catch(console.error);
 		}
 	}
-	if(command==="invite" && config.discordInvite.enabled==="yes") {
+	if(command==="invite" && config.discordInvite.enabled==="yes"){
 		return channel.send("``` https://discord.gg/"+config.discordInvite.code+" ```").catch(console.error)
 	}
 	
 	
 // ######################### JENNER DEV LINKS #############################
-	if(command==="geofence") {
+	if(command==="geofence"){
 		return channel.send("__Jenner__'s **Geofence Generator**: \n https://jennerpalacios.github.io/geofenceFormatter/GeofenceGen ").catch(console.error);
 	}
-	if(command==="geoformat") {
+	if(command==="geoformat"){
 		return channel.send("__Jenner__'s  Geofence **Formatter**: \n https://jennerpalacios.github.io/geofenceFormatter/geoFormatter ").catch(console.error);
 	}
-	if(command==="json2editor") {
+	if(command==="json2editor"){
 		return channel.send("__Jenner__'s  **GeoJsOn** to **gMap**`editor` Formatter: \n https://jennerpalacios.github.io/geofenceFormatter/GeoJson2GMapEditor ").catch(console.error);
 	}
-	if(command==="json2pa") {
+	if(command==="json2pa"){
 		return channel.send("__Jenner__'s  **GeoJsOn** to **PokeAlarm** Formatter: \n https://jennerpalacios.github.io/geofenceFormatter/GeoJson2PokeAlarm ").catch(console.error);
 	}
-	if(command==="geojson") {
+	if(command==="geojson"){
 		return channel.send("Load/Save/Modify **GeoJsOn**, Geofence: \n http://geojson.io/#map=14/47.6089/-122.3393 ").catch(console.error);
 	}
-	if(command==="filtergen") {
+	if(command==="filtergen"){
 		return channel.send("__Jenner__'s **IvFilter Generator:** \n https://jennerpalacios.github.io/Poke-IV-Filter/ ").catch(console.error);
 	}
-	if(command==="rm") {
+	if(command==="rm"){
 		return channel.send("Scanning Software: **RocketMaps**: \n https://rocketmap.readthedocs.io/en/develop/index.html ").catch(console.error);
 	}
-	if(command==="monocle") {
+	if(command==="monocle"){
 		return channel.send("Scanning Software: **Monocle**: \n https://github.com/Noctem/Monocle/wiki ").catch(console.error);
 	}
-	if(command==="pa") {
+	if(command==="pa"){
 		return channel.send("Webhooks for RocketMaps **PokeAlarm**: \n https://github.com/RocketMap/PokeAlarm ").catch(console.error);
 	}
-	if(command==="simplebot") {
+	if(command==="simplebot"){
 		return channel.send("RocketMaps **SimpleBot** (by me): https://github.com/JennerPalacios/RocketMaps-Simple-Bot ").catch(console.error);
+	}
+	if(command==="spoofninja"){
+		return channel.send("AntiSpoofing Discord Bot **SpoofNinja** (by me):\n https://github.com/JennerPalacios/SimpleSpoofNinja ").catch(console.error);
+	}
+	if(command==="pokehelpbot"){
+		return channel.send("PokeHelp Bot (by me): https://github.com/JennerPalacios/PokeHelp-Bot ").catch(console.error);
 	}
 	
 	
@@ -1183,7 +1132,7 @@ bot.on('message', message => {
 //
 	
 	if(command.startsWith("set")){
-		if(user.id===config.ownerID || user.roles.has(AdminR.id)){
+		if(member.id===config.ownerID || member.roles.has(AdminR.id)){
 			
 			// CONFIGURATION FILE
 			let configFile=JSON.parse(fs.readFileSync("./config/config.json", "utf8"));
@@ -1197,7 +1146,7 @@ bot.on('message', message => {
 					"description": "*Type: `!settings <COMMAND>` for their available settings/options...*\n"
 						+"**COMMANDS**:\n"
 						+"`invite`, `map`, `raidsmap`, `patreon`, `paypal`, `rules`, `mainchat`, `botchan`, "
-						+"`serverevents`, `modlog`, `selflvl`, `teams`"
+						+"`serverevents`, `modlog`, `selflvl`, `teams`, `filter`"
 				};
 				return channel.send({embed: embedMSG});
 			}
@@ -1879,13 +1828,19 @@ bot.on('message', message => {
 			
 			// USER ASSIGNED LEVEL-ROLES
 			if(args[0]==="teams"){
-				let valorTeam="Valor: `self-assigned`"; let instinctTeam="Instinct: `self-assigned`"; let mysticTeam="Mystic: `self-assigned`";
+				let teamRoleChanId="";
+				if(config.teamRoles.valor.channelID){ teamRoleChanId="<#"+config.teamRoles.valor.channelID+">" }
+				let valorTeam="Valor: `self-assigned` @ "+teamRoleChanId; teamRoleChanId="<#"+config.teamRoles.channelID+">";
+				if(config.teamRoles.instinct.channelID){ teamRoleChanId="<#"+config.teamRoles.instinct.channelID+">" }
+				let instinctTeam="Instinct: `self-assigned` @ "+teamRoleChanId; teamRoleChanId="<#"+config.teamRoles.channelID+">";
+				if(config.teamRoles.mystic.channelID){ teamRoleChanId="<#"+config.teamRoles.mystic.channelID+">" }
+				let mysticTeam="Mystic: `self-assigned` @ "+teamRoleChanId;
+				
 				let valorLeads=""; let instinctLeads=""; let mysticLeads="";
 				let valorLeadRoles=""; let instinctLeadRoles=""; let mysticLeadRoles="";
 				if(args[1]==="check"){
-					
-					if(config.teamRoles.valor.leadIDs && config.teamRoles.valor.channelID){
-						if(config.teamRoles.valor.leadRoleIDs){
+					if(config.teamRoles.valor.leadIDs.length!==0 && config.teamRoles.valor.channelID){
+						if(config.teamRoles.valor.leadRoleIDs.length!==0){
 							valorLeadRoles+="\n » or anyone with role(s): ";
 							config.teamRoles.valor.leadRoleIDs.some(n=>{ valorLeadRoles+="<@&"+n+">, " });
 						}
@@ -1893,8 +1848,8 @@ bot.on('message', message => {
 						valorTeam="..-- Valor --..\n » valorChannel: <#"+config.teamRoles.valor.channelID+">"
 							+"\n » valorLeads (`"+config.teamRoles.valor.leadIDs.length+"`): "+valorLeads.slice(0,-2)+valorLeadRoles.slice(0,-2);
 					}
-					if(config.teamRoles.instinct.leadIDs && config.teamRoles.instinct.channelID){
-						if(config.teamRoles.instinct.leadRoleIDs){
+					if(config.teamRoles.instinct.leadIDs.length!==0 && config.teamRoles.instinct.channelID){
+						if(config.teamRoles.instinct.leadRoleIDs.length!==0){
 							instinctLeadRoles+="\n » or anyone with role(s): ";
 							config.teamRoles.instinct.leadRoleIDs.some(n=>{ instinctLeadRoles+="<@&"+n+">, " });
 						}
@@ -1902,8 +1857,8 @@ bot.on('message', message => {
 						instinctTeam="..-- Instinct --..\n » instinctChannel: <#"+config.teamRoles.instinct.channelID+">"
 							+"\n » instinctLeads (`"+config.teamRoles.instinct.leadIDs.length+"`): "+instinctLeads.slice(0,-2)+instinctLeadRoles.slice(0,-2);
 					}
-					if(config.teamRoles.mystic.leadIDs && config.teamRoles.mystic.channelID){
-						if(config.teamRoles.mystic.leadRoleIDs){
+					if(config.teamRoles.mystic.leadIDs.length!==0 && config.teamRoles.mystic.channelID){
+						if(config.teamRoles.mystic.leadRoleIDs.length!==0){
 							mysticLeadRoles+="\n » or anyone with role(s): ";
 							config.teamRoles.mystic.leadRoleIDs.some(n=>{ mysticLeadRoles+="<@&"+n+">, " });
 						}
@@ -1963,8 +1918,10 @@ bot.on('message', message => {
 	
 	
 	// RESTART THIS MODULE
-	if(command==="restart" && user.id===config.ownerID && args[0]==="user"){
-		channel.send("♻ Restarting **User** (`userBot.js`) module... please wait `3` to `5` seconds...").then(()=>{ process.exit(1) }).catch(console.error);
+	if(command==="restart" && member.id===config.ownerID){
+		if(args[0]==="user" || args[0]==="all"){
+			channel.send("♻ Restarting **User** (`userBot.js`) module... please wait `3` to `5` seconds...").then(()=>{ process.exit(1) }).catch(console.error);
+		}
 	}
 	
 	//
