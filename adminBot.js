@@ -9,10 +9,10 @@
 const Discord=require('discord.js');
 const bot=new Discord.Client();
 const config=require('./config/config.json');
-const sql = require("sqlite");
+const sqlite = require("sqlite");
 const fs = require("fs");
 const request = require("request");
-sql.open("./database/data.sqlite");
+sqlite.open("./database/sensitive_data.sqlite");
 
 /*
 Copyright (c) 2018 Jenner Palacios
@@ -39,34 +39,39 @@ SOFTWARE.
 
 //
 // COMMON VARIABLES, ARRAYS, AND OBJECTS
-//
-var embedMSG="", skip="", msg1="", msg2="", command="", args="",
-	guild="", user="", channel="", mentioned="", channeled="",
-	createOutput="", createTag="", fetchOutput="";
-
+// [embedMSG,skip,msg1,msg2,command,args,args2,guild,member,channel,mentioned,channeled,fetchOutput]=["","","","","","","","","","","","",""];
+var embedMSG="", skip="", msg1="", msg2="", command="", args="", args2="",
+	guild="", member="", channel="", mentioned="", channeled="",
+	fetchOutput="", fAdvs="yes", fLinks="yes", fSpoof="yes";
 
 //
 // SPOOFNINJA SETTINGS
 //
-var spoofFlag="off";
-var spoofChan="";
+var spoofFlag="on";
+var spoofChan="271532077650935808";
 var spoofWHID="";
 //
 //
 //
 
 
+const txtArr=["one", "two", "three", "four"];
+
+
 // AVOID ADVERTISEMENT | OTHER SERVER NAMES
-const advTxt=["seapokemap","sea-pokemap","pokehuntr","gymhuntr","pokefetch"];
+const advTxt=[" a b c d e f g", "h i j k l m n o p"]
+//=["seapokemap","sea-pokemap","pokehuntr","gymhuntr","pokefetch"];
 	
 // AVOID SPOOFTALKS
-const spoofTxt=["spoof","spooof","spooph","spoooph","sp00f","sp000f","spo0f","sp0of",
-	"s.p.o.o.f","s.p.o.0.f","s.p.0.o.f","s.p.0.0.f","s-p-o-o-f","joystick","s p o o f","s p o 0 f","s p 0 0 f","s p 0 0 f"];
+const spoofTxt=[" a b c d e f g", "h i j k l m n o p"]
+/*["spoof","spooof","spooph","spoooph","sp00f","sp000f","spo0f","sp0of",
+	"s.p.o.o.f","s.p.o.0.f","s.p.0.o.f","s.p.0.0.f","s-p-o-o-f","joystick","s p o o f","s p o 0 f","s p 0 0 f","s p 0 0 f"];*/
 	
 // FRIENDLY CHAT - ADD SPACE IF EXACT MATCH, OR NO SPACE FOR IN-BETWEEN CHARACTERS
-const censorTxt=["fuck","bastard","pussy","dick","cock","dildo","ballsack","boner","shit",
-	"bitch","twat","whore","cunt","biatch","fag","queer","nigga","jizz","buttplug",
-	"butt "," anal "," ass "];
+const censorTxt=[" a b c d e f g", "h i j k l m n o p"]
+//=["fuck","bastard","pussy","dick","cock","dildo","ballsack","boner","shit",
+//	"bitch","twat","whore","cunt","biatch","fag","queer","nigga","jizz","buttplug",
+//	"butt "," anal "," ass "];
 
 // DATE&TIME VALUES
 const DTdays=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -99,9 +104,19 @@ function random(list){
 // END OF: COMMON VARIABLES, ARRAYS, AND OBJECTS
 
 
+//
+// CLEAN EVAL TEXT
+//
+function clean(text){
+	if(typeof(text)==="string"){
+		return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
+	}
+	return text;
+}
+
 
 //
-//	TIME STAMP FUNCTION
+// TIME STAMP FUNCTION
 //
 function timeStamp(type){
 	let CurrTime=new Date();
@@ -110,13 +125,162 @@ function timeStamp(type){
 	if(!type || type===1){
 		return "`"+mo+"/"+da+"/"+yr.toString().slice(2)+"` **@** `"+hr+":"+min+"` "
 	}
-	if(type===2) {
+	if(type===2){
 		return "["+yr+"/"+mo+"/"+da+" @ "+hr+":"+min+":"+sec+"] "
 	}
-	if(type===3) {
+	if(type===3){
 		return "`"+yr+"/"+mo+"/"+da+"` **@** `"+hr+":"+min+":"+sec+"`"
 	}
 }
+
+
+//
+// CHAT ACTIVITY CHECK FUNCTION
+//
+function Inactive(guild, channel, flag){
+	let guildMembers=[],inactiveCount="",userCount="",warnembedMSG="";
+	
+	guild.fetchMembers()
+	.then(liveGuild => {
+		liveGuild.members.map(m => {guildMembers.push(m)});
+		let timeDelay=1000;inactiveCount=0;userCount=guildMembers.length;
+		
+		channel.send("⚠ I am about to check "+userCount+" members on this server for their last activity.");
+		
+		embedMSG={
+			'color': 0xFF0000,
+			'title': 'YOU HAVE BEEN KICKED',
+			'thumbnail': {'url': config.images.kicked},
+			'description': '**From Server**: '+config.serverName+'\n**Reason**: You were inactive, if you feel this was in error contact us for a reinvite\nSee the pinned post in the Facebook group for more info\nhttps://www.facebook.com/WisconsinPOGODiscord/'
+		};
+		
+		warnembedMSG={
+			'color': 0xFF0000,
+			'title': 'YOU HAVE BEEN WARNED',
+			'thumbnail': {'url': config.images.warning},
+			'description': '**From Server**: '+config.serverName+'\n**Reason**: You are currently inactive, we will be removing people for inactivity in the near future.  If you do not say anything soon you will be kicked'
+		};
+		
+		for(var i=0; i<userCount; i++){
+			let currentMember=guildMembers[i];
+			let currentCount=i+1;
+			
+			setTimeout(function(){
+				sqlite.get("SELECT * FROM chat_tracker WHERE userId="+currentMember.user.id)
+				.then(row => {
+					if(!row){
+						if(!InactiveExempt(currentMember,guild)){
+							if(flag==="kick"){
+								//bot.users.get(currentMember.user.id).send({embed: embedMSG}).catch(err=>console.info(err.message));
+								//bot.channels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was kicked for being inactive").catch(console.error);
+								//currentMember.kick("User was inactive").catch(console.error);							
+							}
+							if(flag==="warn"){
+								//bot.users.get(currentMember.user.id).send({embed: warnembedMSG}).catch(console.error);
+								//bot.channels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was warned for being inactive").catch(console.error);
+							}
+							else{
+								sqlite.get("SELECT * FROM chat_tracker WHERE userId="+currentMember.id)
+								.then(row => {
+									if (!row){
+										sqlite.run("INSERT INTO chat_tracker (userId, userName, lastDate, points, level) VALUES (?,?,?,?,?)",
+											[currentMember.id, currentMember.joinedTimestamp, 1, 0])
+										.catch(err=>{
+											console.info("ERROR admin#I-1:\n"+err.message)
+										});
+									}
+									else {
+										sqlite.run("UPDATE chat_tracker SET lastDate=?, points=?, level=? WHERE userId="+currentMember.id,
+											[currentMember.joinedTimestamp, 0, 0])
+										.catch(err=>{
+											console.info("ERROR admin#I-2:\n"+err.message)
+										});
+									}
+								})
+								.catch(err=>{
+									console.info("ERROR admin#I-3:\n"+err.message)
+								});
+								let skipDTcheck="no";
+								let lastseen=currentMember.joinedTimestamp;let lastSeenDate=new Date();lastSeenDate.setTime(lastseen);
+								let daLastDate=DTdays[lastSeenDate.getDay()]+", "+DTmonths[lastSeenDate.getMonth()]+" "+lastSeenDate.getDate()+", "+lastSeenDate.getFullYear();
+								daysJoined=new Date().getTime() - lastseen; daysJoined=daysJoined/1000/60/60/24; daysJoined=daysJoined.toFixed(0);
+								if(daysJoined>365 && daysJoined<731 && skipDTcheck==="no"){daysJoined=daysJoined-365;daysJoined="1 year, "+daysJoined; skipDTcheck="yes"}
+								if(daysJoined>730 && daysJoined<1096 && skipDTcheck==="no"){daysJoined=daysJoined-730;daysJoined="2 years, "+daysJoined; skipDTcheck="yes"}
+								if(daysJoined>1095 && daysJoined<1461 && skipDTcheck==="no"){daysJoined=daysJoined-1095;daysJoined="3 years, "+daysJoined; skipDTcheck="yes"}
+								if(daysJoined>1460 && daysJoined<1826 && skipDTcheck==="no"){daysJoined=daysJoined-1460;daysJoined="4 years, "+daysJoined; skipDTcheck="yes"}
+								channel.send("User "+currentCount+"/"+userCount+": "+currentMember.user+" has not been seen since we started tracking\n"
+									+"» Adding their `joinedAt`-date: **"+daLastDate+"** as the `lastDate`, which was **"+daysJoined+" days ago**");
+							}
+							inactiveCount++;
+						}
+					}
+					else {
+						let currentDate=new Date();
+						let inactiveDate=new Date(currentDate.getFullYear(),currentDate.getMonth()-config.inactiveMonthLimit,currentDate.getDate()-(config.inactiveWeekLimit*7), 0, 0, 0, 0);
+						let lastseen=row.lastDate;let lastSeenDate=new Date();lastSeenDate.setTime(lastseen);
+						
+						let resultT="no";
+						if(inactiveDate > lastSeenDate){ resultT="yes" }
+						
+						if(inactiveDate > lastSeenDate){
+							if(!InactiveExempt(currentMember,guild)){
+								if(flag==="kick"){
+									//bot.users.get(currentMember.user.id).send({embed: embedMSG}).catch(console.error);
+									//bot.channels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was kicked for being inactive").catch(console.error);
+									//currentMember.kick("User was inactive").catch(console.error);							
+								}	
+								else if(flag==="warn"){
+									//bot.users.get(currentMember.user.id).send({embed: warnembedMSG}).catch(console.error);
+									//bot.channels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was warned for being inactive").catch(console.error);
+								}
+								else{
+									let skipDTcheck="no";
+									let daLastDate=DTdays[lastSeenDate.getDay()]+", "+DTmonths[lastSeenDate.getMonth()]+" "+lastSeenDate.getDate()+", "+lastSeenDate.getFullYear();
+									let daysJoined=new Date().getTime() - lastseen; daysJoined=daysJoined/1000/60/60/24; daysJoined=daysJoined.toFixed(0);
+									if(daysJoined>365 && daysJoined<731 && skipDTcheck==="no"){daysJoined=daysJoined-365;daysJoined="1 year, "+daysJoined; skipDTcheck="yes"}
+									if(daysJoined>730 && daysJoined<1096 && skipDTcheck==="no"){daysJoined=daysJoined-730;daysJoined="2 years, "+daysJoined; skipDTcheck="yes"}
+									if(daysJoined>1095 && daysJoined<1461 && skipDTcheck==="no"){daysJoined=daysJoined-1095;daysJoined="3 years, "+daysJoined; skipDTcheck="yes"}
+									if(daysJoined>1460 && daysJoined<1826 && skipDTcheck==="no"){daysJoined=daysJoined-1460;daysJoined="4 years, "+daysJoined; skipDTcheck="yes"}
+									channel.send("User "+currentCount+"/"+userCount+": "+currentMember.user+" has not been seen since: `"+daLastDate+"`, **"+daysJoined+" days ago**");
+								}
+								inactiveCount++;
+							}
+						}
+					}			
+				})
+				.catch(err=>console.info(err.message));
+				if(currentCount===userCount){
+					channel.send("✅ Finished checking **"+userCount+"** members on this server with a total of **"+inactiveCount+"** users that are completely **inactive**.");
+				}
+			},timeDelay);
+			timeDelay=timeDelay+1000;
+		}
+	});
+}
+
+function InactiveExempt(currentMember,guild){
+	let exempt=false;						
+
+	if(currentMember.user.bot) { exempt=true}
+	for(donors in config.donorRoleNames){
+		if(exempt) { break }
+		let donorRole = guild.roles.find(role => role.name === config.donorRoleNames[donors]);
+		exempt = currentMember.roles.has(donorRole.id);		
+
+	}
+	for(exemptions in config.activeExemptRoles){
+		if(exempt) { break }
+		let exemptRole = guild.roles.find(role => role.name === config.activeExemptRoles[exemptions]);
+		exempt = currentMember.roles.has(exemptRole.id);							
+	}
+	return exempt;
+}
+//
+//
+//
+
+
+process.on('unhandledRejection', error => console.error(`Uncaught Promise Rejection:\n${error}`));
 
 
 
@@ -126,6 +290,8 @@ function timeStamp(type){
 bot.on('ready', () => {
 	config.botVersion="2.0";
 	console.info(timeStamp(2)+"-- DISCORD HELPBOT: "+bot.user.username+", ADMIN MODULE IS READY --");
+	
+	// VERSION CHECKER
 	request("https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/version.txt",
 		function(error,response,body){
 			if(error){console.info(error)}
@@ -140,7 +306,30 @@ bot.on('ready', () => {
 				)
 			}
 		}
-	)
+	);
+	
+	//
+	// DATABASE FILE AND TABLE CREATION
+	//
+	
+	// TEMPORARY ROLES
+	sqlite.run("CREATE TABLE IF NOT EXISTS roles_temp (userID TEXT, userName TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT, addedBy TEXT)")
+	.catch(err=>{
+		console.info("ERROR admin#R-1:\n"+err.message)
+	});
+	
+	// SPAM CONTROL
+	sqlite.run("CREATE TABLE IF NOT EXISTS cmd_spamCTRL (userID TEXT, userName TEXT, lastDate TEXT, cmdCount TEXT)")
+	.catch(err=>{
+		console.info("ERROR admin#R-2:\n"+err.message)
+	});
+	
+	// CHAT TRACKER
+	sqlite.run("CREATE TABLE IF NOT EXISTS chat_tracker (userId TEXT, userName TEXT, lastMsg TEXT, lastChan TEXT, lastDate TEXT, points INTEGER, level INTEGER)")
+	.catch(err=>{
+		console.info("ERROR admin#R-3:\n"+err.message)
+	});
+	
 });
 
 
@@ -153,7 +342,7 @@ bot.on('ready', () => {
 // BAN EVENT
 //
 bot.on("guildBanAdd", (guild,user) => {
-	if(config.modLogChannel.banEvents==="yes") {
+	if(config.modLogChannel.banEvents==="yes"){
 		setTimeout(function(){
 			guild.fetchAuditLogs({limit: 1,type: 22})
 			.then(auditLog => {
@@ -186,21 +375,24 @@ bot.on("guildMemberAdd", member => {
 	guild=member.guild; user=member.user;
 	console.log(timeStamp(2)+"[ADMIN] [JOIN] \""+user.username+"\" ("+user.id+") has joined server: "+guild.name);
 	let welcomeList=[
-		member+" is looking for their next **"+random(pokeBadge)+" Badge**",
-		"Quick! A wild "+member+" has just **spawned**!", 
+		member+" came to get their last badge, the **"+random(pokeBadge)+" Badge**!",
+		"Everyone quick! A **shiny** "+member+" has just **spawned**!", 
 		member+" is looking for their **"+random(pokeCuttie)+"**, anyone seen it?",
 		"Prepare for trouble, "+member+", and make it double...",
-		member+" wants to be their very **best**, like no one ever was!",
+		member+" wants to be their very **best** ♪, like no one ever was! ♫ ♪",
 		"Trainer "+member+" needs a **"+random(pokeCuttie)+"** to complete their **PokeDex**!",
 		member+", from the **"+random(pokeRegion)+" Region**, is looking for a friendly match!",
-		"Anyone with a **"+random(pokeBadge)+" Badge**? "+member+" is looking for battle!",
+		"Anyone with a **"+random(pokeBadge)+" Badge**? "+member+" needs help getting one!",
 		member+" needs help finding the **"+random(pokeCity)+" City Gym**, help them out plz!",
-		"A wild "+member+" **CP**:`489` (__82%__ 12/10/15) has just **spawned**!", 
+		"A wild "+member+" **CP**:`489` (__82%__ 12/10/15) has just **spawned**!",
+		"One sec guys! "+member+" needs to heal their Pokémon...",
+		member+" has an `OP` **"+random(pokeCuttie)+"**! Niantic, nerf it pl0x!",
+		"Gratz "+member+"! You just caught your first **"+random(pokeCuttie)+"**!",
+		member+" has come to show off their **"+random(pokeCuttie)+"** - what a noOb!"
 	];
 	
 	let joinMSG=welcomeList[Math.floor(Math.random()*welcomeList.length)]
 	
-	console.log(timeStamp(2)+"[ADMIN] [JOIN] \""+user.username+"\" ("+user.id+") has joined server: "+guild.name);
 	if(config.serverEvents.joinEvents==="yes"){
 		if(config.serverEvents.joinRandom==="yes"){
 			return bot.channels.get(config.serverEvents.channelID).send(timeStamp(1)+joinMSG);
@@ -229,8 +421,8 @@ bot.on("guildMemberRemove", member => {
 //
 setInterval(function(){
 	let timeNow=new Date().getTime(); let dbTime=""; let daysLeft="";
-	sql.all(`SELECT * FROM temporary_roles`).then(rows => {
-		if (!rows) {
+	sqlite.all(`SELECT * FROM roles_temp`).then(rows => {
+		if (!rows){
 			return console.info(timeStamp(2)+"[ADMIN] No one is in the DataBase");
 		}
 		else {
@@ -244,10 +436,11 @@ setInterval(function(){
 						+rows[rowNumber].temporaryRole+"** - their **temporary** access has __EXPIRED__ 😭 ").catch(console.error);
 					bot.users.get(member.id).send("⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"
 						+rows[rowNumber].temporaryRole+"** - your **temporary** access has __EXPIRED__ 😭 \n"
-						+"Please contact <@"+config.ownerID+"> if you wish to renew your **temporary role**.").catch(console.error);
+						+"Please contact <@"+config.ownerID+"> if you wish to renew your **temporary role**.")
+						.catch(err=>console.info("ERROR: "+err.message+"\nUser: "+bot.users.get(member.id).username));
 					
 					// CHECK IF ROLE EXIST, AND CHECK IF USER STILL IN SERVER
-					let rName=bot.guilds.get(config.serverID).roles.find('name', rows[rowNumber].temporaryRole); 
+					let rName=bot.guilds.get(config.serverID).roles.find(role => role.name === rows[rowNumber].temporaryRole); 
 					if(!rName){ return console.log("[ERROR] [ADMIN] [TEMPORARY-ROLE] Role ID: "+rows[rowNumber].temporaryRole+" was not found in server!") }
 					let daMember=bot.guilds.get(config.serverID).members.get(rows[rowNumber].userID);
 					if(!daMember){ return console.log("[ERROR] [ADMIN] [TEMPORARY-ROLE] Member ID: "+rows[rowNumber].userID+" was not found in server!") }
@@ -255,15 +448,13 @@ setInterval(function(){
 					// REMOVE ROLE FROM USER
 					if(daMember.roles.has(rName.id)){daMember.removeRole(rName).catch(console.error)}
 					// REMOVE DATABASE ENTRY
-				sql.get(`DELETE FROM temporary_roles WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}"`).catch(console.error);
+				sqlite.get(`DELETE FROM roles_temp WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}"`).catch(console.error);
 					return;
 				}
 			}
 		}
-	}).catch(()=>{
-		sql.run("CREATE TABLE IF NOT EXISTS temporary_roles (userID TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT, addedBy TEXT)").catch(console.error);
-		return console.info(timeStamp(2)+"[ADMIN] Database CREATED");
-	});
+	})
+	.catch(err=>{console.info(err)})
 },3600000);
 // 86400000 = 24hrs
 // 43200000 = 12hrs
@@ -281,32 +472,35 @@ setInterval(function(){
 // ############################## TEXT MESSAGE ##############################
 // ##########################################################################
 bot.on('message', message => {
+	
+	// CLEAR PREVIOUS VARIABLES
+	[embedMSG,skip,msg1,msg2,command,args,args2,guild,member,channel,mentioned,channeled,fetchOutput]=["","","","","","","","","","","","",""];
+	
 	//STOP SCRIPT IF DM/PM
-	if(message.channel.type==="dm"){ return }
+	if(message.channel.type==="dm"){ return }  if(message.guild.id!==config.serverID){ return }
 	
 	// GET CHANNEL INFO
-	guild=message.guild; channel=message.channel; user=message.member; msg1=message.content; msg2=msg1.toLowerCase();
+	guild=message.guild; channel=message.channel; member=message.member; msg1=message.content; msg2=msg1.toLowerCase();
 	
 	// GET TAGGED USER
-	mentioned="";
 	if(message.mentions.members.first()){mentioned=message.mentions.members.first();}
 	if(message.mentions.channels.first()){channeled=message.mentions.channels.first();}
 	
 	// REMOVE LETTER CASE (MAKE ALL LOWERCASE)
-	command=msg2.split(" ")[0]; command=command.slice(config.cmdPrefix.length);
+	command=msg2.split(/ +/)[0]; command=command.slice(config.cmdPrefix.length);
 	
 	// GET ARGUMENTS
-	args=msg1.split(" ").slice(1); skip="no";
+	args=msg1.split(/ +/).slice(1); args2=msg2.split(/ +/).slice(1); skip="no";
 	
 	// GET ROLES FROM CONFIG
-	let AdminR=guild.roles.find("name", config.adminRoleName); if(!AdminR){ AdminR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.adminRoleName); }
-	let ModR=guild.roles.find("name", config.modRoleName); if(!ModR){ ModR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.modRoleName); }
+	let AdminR=guild.roles.find(role => role.name === config.adminRoleName); if(!AdminR){ AdminR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.adminRoleName); }
+	let ModR=guild.roles.find(role => role.name === config.modRoleName); if(!ModR){ ModR={"id":"111111111111111111"}; console.info("[ERROR] [CONFIG] I could not find role: "+config.modRoleName); }
 	
 	
 //
 // SPOOF NINJA COMPATIBILITY - AUTO BAN - MORE TO COME
 //
-	if(spoofChan && message.channel.id===spoofChan) {
+	if(spoofChan && message.channel.id===spoofChan){
 		if(message.content){
 			if(message.content.startsWith("!spoof")){
 				if(message.member.roles.has(ModR.id) || message.member.roles.has(AdminR.id) || message.member.id===config.ownerID){
@@ -348,22 +542,22 @@ bot.on('message', message => {
 							if(spoofNinja.length>4){
 								let joinEvent=spoofNinja.some(txt=>txt.includes("joined"))
 								if(joinEvent===true){
-									let catchID=spoofNinja[2].split(" ");
+									let catchID=spoofNinja[2].split(/ +/);
 									catchID=catchID[1].slice(2,-1);
 									embedMSG={
 										'color': 0xFF0000,
 										'title': '⚠ ⛔ YOU HAVE BEEN BANNED ⛔ ⚠',
 										'thumbnail': {'url': "https://raw.githubusercontent.com/JennerPalacios/SimpleDiscordBot/master/img/Poke-banned.png"},
-										'description': '**From Server**: San Diego Hills\n**Reason**: Rule #1 violation; '
+										'description': '**From Server**: '+config.serverName+'\n**Reason**: Rule #1 violation; '
 											+'**you** were found in **spoofing** server(s). We have zero tolerance for **spoofers**, and **any** connection to '
 											+' discord spoofing servers...\n.\n**By**: Bot[`AutoDetect`]\n**On**: '+timeStamp(2)
 									};
-									message.guild.member(catchID).send({embed: embedMSG}).then(()=>{
+									message.guild.members.get(catchID).send({embed: embedMSG}).then(()=>{
 										try {
-											message.guild.member(catchID).ban({dats: 7, reason: "AutoBan: Rule #1 violation, user was found in spoofing server(s)"})
+											message.guild.members.get(catchID).ban({dats: 7, reason: "AutoBan: Rule #1 violation, user was found in spoofing server(s)"})
 										}
 										catch(err){
-											message.channel.send("Error: \n"+err);
+											message.channel.send("ERROR admin#S-1:\n"+err.message);
 										}
 									}).catch(console.error);
 								}
@@ -377,8 +571,10 @@ bot.on('message', message => {
 //
 // END OF: SPOOFNINJA COMPATIBILITY
 //
-
-
+	
+	
+	
+	
 // ##########################################################################
 // ############################## SPAM CONTROL ##############################
 // ##########################################################################
@@ -386,7 +582,8 @@ bot.on('message', message => {
 // ############################## NO OTHER INVITES EXCEPT ONES POSTED BY BOT OR STAFF ##############################
 	let invLinks=msg2.match(/discord.gg/g);
 	if(invLinks){
-		if(user.id===config.botID || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){ skip="yes" }
+		if(!member){ return }
+		if(member.id===config.botID || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID || fLinks==="no"){ skip="yes" }
 		
 		if(skip==="no"){
 			message.delete();
@@ -397,9 +594,9 @@ bot.on('message', message => {
 				'description': 'You are being **WARNED** about an __invite__ code or link... '
 					+'Advertising of other servers is **NOT** allowed in our server.\n**OffenseDate**: '+timeStamp(1)
 			};
-			console.log(timeStamp(2)+"[ADMIN] [INVITE-TXT] \""+user.user.username+"\" ("+user.id+") said: "+message.content);
-			user.send({embed: embedMSG}).catch(console.error);
-			return user.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
+			console.log(timeStamp(2)+"[ADMIN] [INVITE-TXT] \""+member.user.username+"\" ("+member.id+") said: "+message.content);
+			member.send({embed: embedMSG}).catch(console.error);
+			return member.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
 		}
 	}
 	
@@ -409,7 +606,7 @@ bot.on('message', message => {
 	if(advTxt.some(word => msg2.includes(word))){
 		
 		// STOP SCRIPT IF USER IS ADMIN|OWNER|MOD|STAFF
-		if(user.id===config.botID || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){ skip="yes" }
+		if(member.id===config.botID || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID || fAdvs==="no"){ skip="yes" }
 		
 		if(skip==="no"){
 			message.delete();
@@ -417,12 +614,12 @@ bot.on('message', message => {
 				'color': 0xFF0000,
 				'title': '⚠ WARNING: No Advertising ⚠',
 				'thumbnail': {'url': config.images.warning},
-				'description': 'You are being **WARNED** about a word/link... '
+				'description': 'You are being **WARNED** about a link... '
 					+'Advertising is **NOT** allowed in our server.\n**OffenseDate**: '+timeStamp(1)
 			};
-			console.log(timeStamp(2)+"[ADMIN] [ADV-TEXT] \""+user.user.username+"\" ("+user.id+") said: "+message.content);
-			user.send({embed: embedMSG}).catch(console.error);
-			return user.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
+			console.log(timeStamp(2)+"[ADMIN] [ADV-TEXT] \""+member.user.username+"\" ("+member.id+") said: "+message.content);
+			member.send({embed: embedMSG}).catch(console.error);
+			return member.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
 		}
 	}
 	
@@ -432,7 +629,7 @@ bot.on('message', message => {
 	if(spoofTxt.some(word => msg2.includes(word))){
 		if(user){
 			// STOP SCRIPT IF USER IS ADMIN|OWNER|MOD|STAFF
-			if(message.author.id===config.botID || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){ skip="yes" }
+			if(message.author.id===config.botID || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID || fSpoof==="no"){ skip="yes" }
 			
 			if(skip==="no"){
 				message.delete();
@@ -443,9 +640,9 @@ bot.on('message', message => {
 					'description': 'You are being **WARNED** about a word... '
 						+'**Spoof**-talk is **NOT** allowed in our server.\n**OffenseDate**: '+timeStamp(1)
 				};
-				console.log(timeStamp(2)+"[ADMIN] [SPOOF-TEXT] \""+user.user.username+"\" ("+user.id+") said: "+message.content);
-				user.send({embed: embedMSG}).catch(console.error);
-				return user.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
+				console.log(timeStamp(2)+"[ADMIN] [SPOOF-TEXT] \""+member.user.username+"\" ("+member.id+") said: "+message.content);
+				member.send({embed: embedMSG}).catch(console.error);
+				return member.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
 			}
 		}
 	}
@@ -456,7 +653,7 @@ bot.on('message', message => {
 	if(censorTxt.some(word => msg2.includes(word))){
 		
 		// STOP SCRIPT IF USER IS ADMIN|OWNER|MOD|STAFF
-		if(user.id===config.botID || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){skip="yes"}
+		if(member.id===config.botID || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){skip="yes"}
 		
 		if(skip==="no"){
 			message.delete();
@@ -467,9 +664,9 @@ bot.on('message', message => {
 				'description': 'You are being **WARNED** about a **inappropriate** word... '
 					+'Please watch your language; kids play this game too, you know\n**OffenseDate**: '+timeStamp(1)
 			};
-			console.log(timeStamp(2)+"[ADMIN] [CENSOR-TXT] \""+user.user.username+"\" ("+user.id+") said: "+message.content);
-			user.send({embed: embedMSG}).catch(console.error);
-			return user.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
+			console.log(timeStamp(2)+"[ADMIN] [CENSOR-TXT] \""+member.user.username+"\" ("+member.id+") said: "+message.content);
+			member.send({embed: embedMSG}).catch(console.error);
+			return member.send("Please **Read/Review Our Rules** at: <#"+config.rulesChannel.channelID+"> ... in order to avoid Mute/Kick/Ban");
 		}
 	}
 
@@ -486,72 +683,135 @@ bot.on('message', message => {
 	//
 	if(command){
 		
-		// CONSOLE ALL COMMANDS TYPED
-		// console.info(timeStamp(2)+"[ADMIN] \""+user.user.username+"\" ("+user.id+") used command: [!"+command+" "+args+"] in server: \""+g.name+"\", channel: #"+channel.name);
-		
 		// STOP SCRIPT IF USER IS ADMIN|OWNER|MOD|STAFF
-		if(user.id===config.botID || user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){ 
+		if(member.id===config.botID || member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID
+			|| member.id==="305373042425724948"){ 
 			skip="yes"; 
 			// console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] COMMANDS-SPAM-CONTROL Stopped for ADMIN|OWNER|MOD|STAFF"); 
 		}
 		
 		if(skip==="no"){
+			let curTime=new Date().getTime();
+			
 			// CHECK DATABASE IF USER EXIST AND/OR TYPED A COMMAND
-			sql.get(`SELECT * FROM cmd_spamCTRL WHERE userID="${user.id}"`).then(row => {
-				
+			sqlite.get(`SELECT * FROM cmd_spamCTRL WHERE userID="${member.id}"`)
+			.then(row => {
 				// USER NOT FOUND IN DATABASE
-				if (!row) {
-					sql.run("INSERT INTO cmd_spamCTRL (userID, cmdCount) VALUES (?, ?)", [user.id, 1]);
-					return console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] I've added \""+user.user.username+"\" ("+user.id+") to my DataBase, they were not in it!");
+				if (!row){
+					sqlite.get("INSERT INTO cmd_spamCTRL (userID, userName, lastDate, cmdCount) VALUES (?,?,?,?)", [member.id, member.user.username, curTime, 1]);
+					return console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] I've added \""+member.user.username+"\" ("+member.id+") to my DataBase, they were not in it!");
 				}
 				
 				// USER FOUND IN DATABASE
 				else {
-					sql.get(`SELECT * FROM cmd_spamCTRL WHERE userID="${user.id}"`).then(row => {
+					sqlite.get(`SELECT * FROM cmd_spamCTRL WHERE userID="${member.id}"`).then(row => {
+						
+						// RESET COUNT AFTER 15000 MILISECONDS (15 SECS DUH!)
+						setTimeout(function(){
+							sqlite.run("UPDATE cmd_spamCTRL SET cmdCount=0 WHERE userID="+row.userID)
+							.catch(err=>console.info("ERROR admin#C-1:\n"+err.message))
+						},15000);
 						
 						// GET CMD COUNT, AND ADD 1
 						let cmdCurCount=row.cmdCount; cmdCurCount++;
-						sql.run("UPDATE cmd_spamCTRL SET cmdCount="+cmdCurCount+" WHERE userID="+user.id).catch(console.error);
-						// console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] Added +1 to user: "+user.user.username+" ("+user.id+")'s cmdCount");
+						sqlite.run("UPDATE cmd_spamCTRL SET cmdCount="+cmdCurCount+" WHERE userID="+member.id)
+						.catch(err=>console.info("ERROR admin#C-2:\n"+err.message));
+						// console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] Added +1 to user: "+member.user.username+" ("+member.id+")'s cmdCount");
 						
 						// GET CMD COUNT AGAIN FOR FEEDBACK AND TIMER
-						sql.get(`SELECT * FROM cmd_spamCTRL WHERE userID="${user.id}"`).then(row => {
+						sqlite.get(`SELECT * FROM cmd_spamCTRL WHERE userID="${member.id}"`).then(row => {
+							
+							let daUser=row.userID;
+							console.info("L725: daUser."+daUser+" = db."+row.userID+" = db."+row.userName+" = m."+member.user.id+" = m."+member.user.username);
 							
 							// IF TYPED 4 COMMANDS, KICK FOR SPAM
-							if(row.cmdCount==="4"){
-								user.send("⚠ **NOTICE:** you have been **KICKED** due to: **command SPAM/ABUSE**, next time it will be a **BAN**");
-								channel.send("⚠ **NOTICE:** "+user.user+" has been **KICKED** due to: **command SPAM/ABUSE**, next time it will be a **BAN**");
+							if(row.cmdCount>3){
+								bot.members.get(daUser).send("⚠ **NOTICE:** you have been **KICKED** due to: **command SPAM/ABUSE**, next time it will be a **BAN**")
+								.catch(err=>console.info("ERROR admin#C-3:\n"+member.user.username+"|"+err.message));
+								channel.send("⚠ **NOTICE:** "+member.user+" has been **KICKED** due to: **command SPAM/ABUSE**, next time it will be a **BAN**");
 								embedMSG={
 									'color': 0xFF0000,
-									'title': '"'+user.user.username+'" HAS BEEN KICKED',
+									'title': '"'+member.user.username+'" HAS BEEN KICKED',
 									'thumbnail': {'url': config.images.kicked},
-									'description': '**UserID**: '+user.user.id+'\n**UserTag**: '+user.user.username+'\n'
-										+'**Reason**: Command Spamming\n**Command**: !'+message.content+'\n\n**By**: AutoDetect \n**On**: '+timeStamp(1)
+									'description': '**UserID**: '+member.user.id+'\n**UserTag**: '+member.user.username+'\n'
+										+'**Reason**: Command Spamming\n**Command**: `'+message.content+'`\n\n**By**: AutoDetect \n**On**: '+timeStamp(1)
 								};
-								bot.channels.get(config.modLogChannel.channelID).send({embed: embedMSG}).catch(console.error);
-								guild.member(user.user.id).kick();
+								bot.channels.get(config.modLogChannel.channelID).send({embed: embedMSG})
+								.catch(err=>console.info("ERROR admin#C-4:\n"+err.message));
+								guild.member(member.user.id).kick()
+								.then(kmember=>console.info(kmember));
 							}
 							
 							// IF TYPED 3 COMMANDS WARN THEM
-							if(row.cmdCount==="3"){
-								console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] WARNING: "+user.user.username+" ("+user.id+") have used 3 consecutive commands, they could be KICKED...");
-								user.send("⚠ **WARNING:** you have used 3 consecutive commands, please allow **15 seconds** between each command! **1 more and you will be __KICKED__**");
-								channel.send("⚠ **WARNING:** "+user.user+", you have used 3 consecutive commands, please allow **15 seconds** between each command! **1 more and you will be __KICKED__**");
+							if(row.cmdCount>2){
+								console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] WARNING: "+member.user.username+" ("+member.id+") have used 3 consecutive commands, they could be KICKED...");
+								member.send("⚠ **WARNING:** you have used 3 consecutive commands, please allow **15 seconds** between each command! **1 more and you will be __KICKED__**")
+								.catch(err=>console.info("ERROR admin#C-5:\n"+member.user.username+"|"+err.message));
+								channel.send("⚠ **WARNING:** "+member.user+", you have used 3 consecutive commands, please allow **15 seconds** between each command! **1 more and you will be __KICKED__**");
 							}
-							
-							// RESET COUNT AFTER 15000 MILISECONDS (15 SECS DUH!)
-							setTimeout(function(){sql.run("UPDATE cmd_spamCTRL SET cmdCount=0 WHERE userID="+user.id).catch(console.error);},15000);
 						});
 					});
 				}
-			}).catch(() => {
-				console.error;
-				sql.run("CREATE TABLE IF NOT EXISTS cmd_spamCTRL (userID TEXT, cmdCount TEXT)").then(() => {
-					sql.run("INSERT INTO cmd_spamCTRL (userID, cmdCount) VALUES (?, ?)", [user.id, 1]);
-					console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] Table was not found in DataBased, I've created it.");
-					console.info(timeStamp(2)+"[ADMIN] [SPAM CONTROL] I've added \""+user.user.username+"\" ("+user.id+") to my DataBase, they were not in it!");
-				});
+			})
+			.catch(err => {
+				console.info("ERROR admin#C-6:\n"+err.message)
 			});
+		}
+	}
+	
+	
+	
+// ############################## EVAL ##############################
+	if(command==="eval"){
+		if(member.id===config.ownerID){
+			try{
+				let code=message.content.slice(6);
+				let evaled=eval(code);
+				if(typeof evaled!=="string"){
+					evaled=require("util").inspect(evaled);
+					embedMSG={
+						'color': 0x00FF00,
+						'description': '📥 **[**`Input`**]**:```js\n'+code+'```📤 **[**`Output`**]**:'
+							+'```xl\n'+clean(evaled)+'```'
+					};
+					return channel.send({embed: embedMSG})
+				}
+				console.info(evaled);
+				embedMSG={
+					'color': 0x00FF00,
+					'description': '📥 **[**`Input`**]**:```js\n'+code+'```📤 **[**`Output`**]**:'
+						+'```xl\n'+clean(evaled)+'```'
+				};
+				return channel.send({embed: embedMSG})
+			}
+			catch(err){
+				channel.send("⛔ **[**`ERROR`**]**:```md\n"+err.message+"```")
+			}
+		}
+	}
+	
+	
+	
+// ############################## INACTIVE ##############################
+	if(command==="activity"){
+		if(!args2[0]){
+			embedMSG={
+				"color": 0xFF0000,
+				"title": "ℹ Available Syntax and Arguments ℹ",
+				"description": "`!activity check`\n"
+					+"`!activity check -warn` » warn user \n"
+					+"`!activity check -kick` » kick user "
+			};
+			return channel.send({embed: embedMSG});
+		}
+		if(args2[0]==="check" && !args2[1]){
+			Inactive(guild,channel,"none");
+		}
+		if(args2[1]==="warn"){
+			Inactive(guild,channel,"warn");
+		}
+		if(args2[1]==="kick"){
+			Inactive(guild,channel,"kick");
 		}
 	}
 	
@@ -559,7 +819,7 @@ bot.on('message', message => {
 	
 // ############################## STATS ##############################
 	if(command==="stats"){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			let onlineM=guild.members.filter(user=>user.presence.status==="online").size;
 			let idleM=guild.members.filter(user=>user.presence.status==="idle").size;
 			let busyM=guild.members.filter(user=>user.presence.status==="dnd").size;
@@ -582,7 +842,6 @@ bot.on('message', message => {
 		}
 	}
 	
-
 	
 	
 // ############################## INFO ##############################
@@ -618,7 +877,7 @@ bot.on('message', message => {
 			);
 			return
 		}
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(args[0]==="server"){
 				let gDate=guild.createdAt; let gCreatedDate=DTdays[gDate.getDay()].slice(0,3)+" "+DTmonths[gDate.getMonth()]+" "+gDate.getDate()+", "+gDate.getFullYear();
 				let userBots=message.guild.members.filter(b => b.user.bot);
@@ -638,17 +897,16 @@ bot.on('message', message => {
 				return channel.send({embed: embedMSG}).catch(console.error);
 			}
 			if(mentioned){
-				let gMember=guild.members.get(mentioned.id);
 				
 				// COMMON VARIABLES
 				let joinedAt=""; let joinedDT=""; let joinedDate=""; let mRolesName=""; let userRoleCount=""; let roleNames="";
 				let daysJoined=""; let createdAt=""; let createdDate=""; let skipDTcheck="no";
 				
 				// MEMBER NICKNAME
-				if(!gMember.nickname){gMember.nickname="No \"/Nick\" yet"}
+				if(!mentioned.nickname){mentioned.nickname="No \"/Nick\" yet"}
 				
 				// JOINED DATE()
-				joinedAt=gMember.joinedTimestamp; joinedDT=new Date(); joinedDT.setTime(joinedAt);
+				joinedAt=mentioned.joinedTimestamp; joinedDT=new Date(); joinedDT.setTime(joinedAt);
 				joinedDate=DTdays[joinedDT.getDay()].slice(0,3)+" "+DTmonths[joinedDT.getMonth()]+" "+joinedDT.getDate()+", "+joinedDT.getFullYear();
 				daysJoined=new Date().getTime() - joinedAt; daysJoined=daysJoined/1000/60/60/24; daysJoined=daysJoined.toFixed(0);
 				if(daysJoined>365 && daysJoined<731 && skipDTcheck==="no"){daysJoined=daysJoined-365;daysJoined="1 year, "+daysJoined; skipDTcheck="yes"}
@@ -658,7 +916,7 @@ bot.on('message', message => {
 				
 				
 				// ACCOUNT CREATED DATE()
-				createdAt=mentioned.createdAt.getTime(); createdDT=new Date(); createdDT.setTime(createdAt); skipDTcheck="no";
+				createdAt=mentioned.user.createdAt.getTime(); createdDT=new Date(); createdDT.setTime(createdAt); skipDTcheck="no";
 				createdDate=DTdays[createdDT.getDay()].slice(0,3)+" "+DTmonths[createdDT.getMonth()]+" "+createdDT.getDate()+", "+createdDT.getFullYear();
 				daysCreated=new Date().getTime() - createdAt; daysCreated=daysCreated/1000/60/60/24; daysCreated=daysCreated.toFixed(0);
 				if(daysCreated>365 && daysCreated<731 && skipDTcheck==="no"){daysCreated=daysCreated-365;daysCreated="1 year, "+daysCreated; skipDTcheck="yes"}
@@ -667,16 +925,16 @@ bot.on('message', message => {
 				if(daysCreated>1460 && daysCreated<1826 && skipDTcheck==="no"){daysCreated=daysCreated-1460;daysCreated="4 years, "+daysCreated; skipDTcheck="yes"}
 				
 				// MEMBER ROLES
-				mRolesName=gMember.roles.map(r => r.name); mRolesName=mRolesName.slice(1); userRoleCount=mRolesName.length; if(!mRolesName){userRoleCount=0} roleNames="NONE "; 
-				if(userRoleCount!==0){ roleNames=mRolesName }
+				mRolesName=mentioned.roles.map(r => r.name); mRolesName=mRolesName.slice(1); userRoleCount=mRolesName.length; if(!mRolesName){userRoleCount=0} roleNames="NONE "; 
+				if(userRoleCount!==0){ roleNames=mRolesName.join(", ") }
 				
 				embedMSG={
 					'color': 0x00FF00,
-					'title': '👤 '+mentioned.username+'\'s \\\u00BB UserInfo',
-					'thumbnail': {'url': 'https://cdn.discordapp.com/avatars/'+mentioned.id+'/'+mentioned.avatar+'.png'},
+					'title': '👤 '+mentioned.user.username+'\'s \\\u00BB UserInfo',
+					'thumbnail': {'url': 'https://cdn.discordapp.com/avatars/'+mentioned.id+'/'+mentioned.user.avatar+'.png'},
 					'fields': [
 						{'name': '⚠ Warning:', 'value': 'The member is inactive! The info I found is limited!', 'inline': false},
-						{'name': '👥 Nick/AKA', 'value': '`'+gMember.nickname+'`', 'inline': true},
+						{'name': '👥 Nick/AKA', 'value': '`'+mentioned.nickname+'`', 'inline': true},
 						{'name': '🕵 UserID', 'value': '`'+mentioned.id+'`', 'inline': true},
 						{'name': '📝 Roles ('+userRoleCount+')', 'value': '`'+roleNames+'`', 'inline': false},
 						{'name': '📆 JoinedServer', 'value': '`'+joinedDate+'`\n(`'+daysJoined+' days ago`)', 'inline': true},
@@ -693,17 +951,17 @@ bot.on('message', message => {
 					
 					embedMSG={
 						'color': 0x00FF00,
-						'title': '👤 '+mentioned.username+'\'s \\\u00BB UserInfo',
-						'thumbnail': {'url': 'https://cdn.discordapp.com/avatars/'+mentioned.id+'/'+mentioned.avatar+'.png'},
+						'title': '👤 '+mentioned.user.username+'\'s \\\u00BB UserInfo',
+						'thumbnail': {'url': 'https://cdn.discordapp.com/avatars/'+mentioned.id+'/'+mentioned.user.avatar+'.png'},
 						'fields': [
-							{'name': '👥 Nick/AKA', 'value': '`'+gMember.nickname+'`', 'inline': true},
+							{'name': '👥 Nick/AKA', 'value': '`'+mentioned.nickname+'`', 'inline': true},
 							{'name': '🕵 UserID', 'value': '`'+mentioned.id+'`', 'inline': true},
 							{'name': '📝 Roles ('+userRoleCount+'):', 'value': '`'+roleNames+'`', 'inline': false},
 							{'name': '📆 JoinedServer:', 'value': '`'+joinedDate+'`\n(`'+daysJoined+' days ago`)', 'inline': true},
 							{'name': '📆 AccountCreated', 'value': '`'+createdDate+'`\n(`'+daysCreated+' days ago`)', 'inline': true},
 							{'name': '👁‍ LastSeenChannel:', 'value': '`#'+mentioned.lastMessage.channel.name+'`', 'inline': true},
 							{'name': '⏲ LastSeenDate:', 'value': '`'+seenDate+'`', 'inline': true},
-							{'name': '🗨 LastMessageSent:', 'value': '`'+mentioned.lastMessage.content+'`', 'inline': true}
+							{'name': '🗨 LastMessageSent:', 'value': '```md\n'+mentioned.lastMessage.content+'```', 'inline': true}
 						]
 					};
 				}
@@ -723,7 +981,7 @@ bot.on('message', message => {
 	
 // ############################## DELETE ##############################
 	if(command==="del"){ 
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -749,7 +1007,7 @@ bot.on('message', message => {
 	
 // ############################## ROLES ##############################
 	if(command.startsWith("role")){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			// message.delete();
 			if(!args[0]){
 				embedMSG={
@@ -774,20 +1032,20 @@ bot.on('message', message => {
 				// ROLES WITH SPACES - NEW
 				let daRoles="";if(!args[2]){daRoles=args[1]}else{daRoles="";for(var x=1;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
 				
-				let rName=guild.roles.find('name', daRoles); 
+				let rName=guild.roles.find(role => role.name === daRoles); 
 				if(!rName){
 					let startWord=args[1].slice(0,3).toLowerCase();
 					
 					for (var i=0;i<rolesNameLC.length;i++){
 						if(rolesNameLC[i].startsWith(startWord)){
-							meantThis += daRolesN[i] +", ";
+							meantThis += "`"+daRolesN[i]+"`, ";
 						}
 					}
 					if(!meantThis){
 						startWord=args[1].slice(0,2).toLowerCase(); meantThis="";
 						for (var i=0;i<rolesNameLC.length;i++){
 							if(rolesNameLC[i].startsWith(startWord)){
-								meantThis += daRolesN[i] +", ";
+								meantThis += "`"+daRolesN[i]+"`, ";
 							}
 						}
 					}
@@ -795,7 +1053,7 @@ bot.on('message', message => {
 						startWord=args[1].slice(0,1).toLowerCase(); meantThis="";
 						for (var i=0;i<rolesNameLC.length;i++){
 							if(rolesNameLC[i].startsWith(startWord)){
-								meantThis += daRolesN[i] +", ";
+								meantThis += "`"+daRolesN[i]+"`, ";
 							}
 						}
 					}
@@ -822,7 +1080,7 @@ bot.on('message', message => {
 				}
 				
 				// CHECK ROLE EXIST
-				let rName=guild.roles.find('name', daRoles); 
+				let rName=guild.roles.find(role => role.name === daRoles); 
 				if(!rName){
 					return message.reply("I couldn't find such role, please try searching for it first: `!roles search <ROLE-NAME>`");
 				}
@@ -832,7 +1090,6 @@ bot.on('message', message => {
 					return message.reply("member doesn't have this role...");
 				}
 				else {
-					mentioned=message.mentions.members.first();
 					mentioned.removeRole(rName).catch(console.error);
 					return channel.send("⚠ "+mentioned+" have **lost** their role of: **"+daRoles+"** 😅 ");
 				}
@@ -842,9 +1099,8 @@ bot.on('message', message => {
 			}
 			else {
 				let daRoles="";if(!args[2]){daRoles=args[1]}else{daRoles="";for(var x=1;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
-				mentioned=message.mentions.members.first();
 				
-				let rName=guild.roles.find('name', daRoles); 
+				let rName=guild.roles.find(role => role.name === daRoles); 
 				if(!rName){
 					return message.reply("I couldn't find such role, please try searching for it first: `!roles search <ROLE-NAME>`");
 				}
@@ -858,7 +1114,7 @@ bot.on('message', message => {
 	
 // ############################## TEMPORARY ROLES ##############################
 	if(command.startsWith("temprole") || command.startsWith("trole")){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			// message.delete();
 			if(!args[0]){
 				embedMSG={
@@ -877,16 +1133,12 @@ bot.on('message', message => {
 				return message.reply("imcomplete data, please try: \n `!temprole @mention <DAYS> <ROLE-NAME>`,\n or `!temprole remove @mention`\n or `!temprole check @mention`");
 			}
 			else {
-				let dateMultiplier=86400000; mentioned=message.mentions.members.first(); 
-				
-				// CREATE DATABASE TABLE 
-				sql.run("CREATE TABLE IF NOT EXISTS temporary_roles (userID TEXT, temporaryRole TEXT, startDate TEXT, endDate TEXT, addedBy TEXT)").catch(console.error);
+				let dateMultiplier=86400000;
 				
 				// CHECK DATABASE FOR ROLES
 				if(args[0]==="check"){
-					mentioned=message.mentions.members.first();
-					sql.all(`SELECT * FROM temporary_roles WHERE userID="${mentioned.id}"`).then(rows => {
-						if (!rows[0]) {
+					sqlite.all(`SELECT * FROM roles_temp WHERE userID="${mentioned.id}"`).then(rows => {
+						if (!rows[0]){
 							return channel.send("⚠ "+mentioned+" is **NOT** in my `DataBase`, "+user);
 						}
 						else {
@@ -905,18 +1157,17 @@ bot.on('message', message => {
 				
 				// REMOVE MEMBER FROM DATABASE
 				if(args[0]==="remove"){
-					mentioned=message.mentions.members.first();
 					// ROLES WITH SPACES - NEW
 					let daRoles="";if(!args[3]){daRoles=args[2]}else{daRoles="";for(var x=2;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
 					
-					sql.get(`SELECT * FROM temporary_roles WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
+					sqlite.get(`SELECT * FROM roles_temp WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
 						if(!row){
 							return message.reply("⚠ [ERROR] "+mentioned+" is __NOT__ in my `DataBase`");
 						}
 						else {
-							let theirRole=guild.roles.find('name', row.temporaryRole);
+							let theirRole=guild.roles.find(role => role.name === row.temporaryRole);
 							if(mentioned.roles.has(theirRole.id)){mentioned.removeRole(theirRole).catch(console.error);}
-							sql.get(`DELETE FROM temporary_roles WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
+							sqlite.get(`DELETE FROM roles_temp WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
 								return channel.send("⚠ "+mentioned+" have **lost** their role of: **"+theirRole.name+"** and has been removed from my `DataBase`");
 							});
 						}
@@ -940,25 +1191,24 @@ bot.on('message', message => {
 				}
 				
 				// CHECK ROLE EXIST
-				let rName=guild.roles.find('name', daRoles);
+				let rName=guild.roles.find(role => role.name === daRoles);
 				if(!rName){
 					return message.reply("I couldn't find such role, please try searching for it first: `!roles search <ROLE-NAME>`");
 				}
 				
 				// ADD MEMBER TO DATASE, AND ADD THE ROLE TO MEMBER
-				sql.get(`SELECT * FROM temporary_roles WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
-					mentioned=message.mentions.members.first(); 
-					if (!row) {
+				sqlite.get(`SELECT * FROM roles_temp WHERE userID="${mentioned.id}" AND temporaryRole="${daRoles}"`).then(row => {
+					if (!row){
 						let curDate=new Date().getTime(); let finalDateDisplay=new Date(); 
 						let finalDate=((args[1])*(dateMultiplier)); finalDate=((curDate)+(finalDate));
 						finalDateDisplay.setTime(finalDate); finalDateDisplay=(finalDateDisplay.getMonth()+1)+"/"+finalDateDisplay.getDate()+"/"+finalDateDisplay.getFullYear();
 						
 						// return channel.send(" curDate: `"+curDate+"`\n finalDate: `"+finalDate+"`\n dateMultiplier: `"+dateMultiplier+"`\n finalDateDisplay: "+finalDateDisplay);
-						sql.run("INSERT INTO temporary_roles (userID, temporaryRole, startDate, endDate, addedBy) VALUES (?, ?, ?, ?, ?)", 
-							[mentioned.id, daRoles, curDate, finalDate, user.id]);
-						let theirRole=guild.roles.find('name', daRoles);
+						sqlite.run("INSERT INTO roles_temp (userID, userName, temporaryRole, startDate, endDate, addedBy) VALUES (?,?,?,?,?,?)", 
+							[mentioned.id, mentioned.user.username, daRoles, curDate, finalDate, member.id]);
+						let theirRole=guild.roles.find(role => role.name === daRoles);
 						mentioned.addRole(theirRole).catch(console.error);
-						console.log(timeStamp(2)+"[ADMIN] [TEMPORARY-ROLE] \""+mentioned.user.username+"\" ("+mentioned.id+") was given role: \""+daRoles+"\", by: "+user.user.username+" ("+user.id+")");
+						console.log(timeStamp(2)+"[ADMIN] [TEMPORARY-ROLE] \""+mentioned.user.username+"\" ("+mentioned.id+") was given role: \""+daRoles+"\", by: "+member.user.username+" ("+member.id+")");
 						return channel.send("🎉 "+mentioned+" has been given a **temporary** role of: **"+daRoles+"**, enjoy! They will lose this role on: `"+finalDateDisplay+"`");
 					}
 					else {
@@ -973,7 +1223,7 @@ bot.on('message', message => {
 	
 // ############################## WARNING ##############################
 	if(command==="warn"){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -999,15 +1249,15 @@ bot.on('message', message => {
 					'color': 0xFF0000,
 					'title': '⚠ THIS IS A WARNING ⚠',
 					'thumbnail': {'url': config.images.warning},
-					'description': '**From Server**: '+config.serverName+'\n**Reason**: '+msgReasons+'\n\n**By**: '+user.user+'\n**On**: '+timeStamp(1)
+					'description': '**From Server**: '+config.serverName+'\n**Reason**: '+msgReasons+'\n\n**By**: '+member.user+'\n**On**: '+timeStamp(1)
 				};
 				bot.users.get(mentioned.id).send({embed: embedMSG}).catch(console.error);
 				embedMSG={
 					'color': 0xFF0000,
-					'title': '⚠ "'+mentioned.username+'" WAS WARNED',
+					'title': '⚠ "'+mentioned.user.username+'" WAS WARNED',
 					'thumbnail': {'url': config.images.warning},
 					'description': '**UserID**: '+mentioned.id+'\n**UserTag**: '+mentioned+'\n'
-						+'**Reason**: '+msgReasons+'\n\n**By**: '+user.user+'\n**On**: '+timeStamp(1)
+						+'**Reason**: '+msgReasons+'\n\n**By**: '+member.user+'\n**On**: '+timeStamp(1)
 				};
 				channel.send("⚠ "+mentioned+", you are being **WARNED** about: **"+msgReasons+'**');
 				return bot.channels.get(config.modLogChannel.channelID).send({embed: embedMSG}).catch(console.error);
@@ -1019,7 +1269,7 @@ bot.on('message', message => {
 	
 // ############################## MUTE ##############################
 	if(command==="mute"){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -1041,18 +1291,17 @@ bot.on('message', message => {
 					if(msgReasons.indexOf(" ")===-1){msgReasons="Check yourself!"}
 					else{msgReasons=msgReasons.trim();msgReasons=msgReasons.slice(msgReasons.indexOf(" "));msgReasons=msgReasons.trim();}}
 				
-				mentioned=message.mentions.members.first();
 				channel.overwritePermissions(mentioned, {SEND_MESSAGES: false})
 				.then(() => {
 					embedMSG={
 						'color': 0xFF0000,
-						'title': '🤐 "'+mentioned.username+'" WAS MUTED',
+						'title': '🤐 "'+mentioned.user.username+'" WAS MUTED',
 						'thumbnail': {'url': config.images.muted},
 						'description': '**UserID**: '+mentioned.id+'\n**UserTag**: '+mentioned+'\n'
-							+'**Channel**: <#'+channel.id+'>\n**Reason**: '+msgReasons+'\n\n**By**: '+user.user+'\n**On**: '+timeStamp(1)
+							+'**Channel**: <#'+channel.id+'>\n**Reason**: '+msgReasons+'\n\n**By**: '+member.user+'\n**On**: '+timeStamp(1)
 					};
 					bot.channels.get(config.modLogChannel.channelID).send({embed: embedMSG}).catch(console.error);
-					console.log(timeStamp(2)+"[ADMIN] [MUTE] \""+mentioned.username+"\" ("+mentioned.id+") was MUTED in guild: "+guild.name+", channel: #"+channel.name+" due to: "+msgReasons);
+					console.log(timeStamp(2)+"[ADMIN] [MUTE] \""+mentioned.user.username+"\" ("+mentioned.id+") was MUTED in guild: "+guild.name+", channel: #"+channel.name+" due to: "+msgReasons);
 					return channel.send("⚠ "+mentioned+" has been 🤐 **MUTED** 🤐 for: **"+msgReasons+'**');
 				}).catch(console.error);
 			}
@@ -1063,7 +1312,7 @@ bot.on('message', message => {
 	
 // ############################## UNMUTE ##############################
 	if(command==="unmute"){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -1078,7 +1327,6 @@ bot.on('message', message => {
 			}
 			else {
 				message.delete();
-				mentioned=message.mentions.members.first();
 				channel.permissionOverwrites.get(mentioned.id).delete().catch(console.error);
 				return channel.send(mentioned+" can now **type/send** messages again 👍 ... but **don't** abuse it!");
 			}
@@ -1089,7 +1337,7 @@ bot.on('message', message => {
 	
 // ############################## KICK ##############################
 	if(command==="kick"){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -1111,22 +1359,21 @@ bot.on('message', message => {
 					if(msgReasons.indexOf(" ")===-1){msgReasons="Check yourself!"}
 					else{msgReasons=msgReasons.trim();msgReasons=msgReasons.slice(msgReasons.indexOf(" "));msgReasons=msgReasons.trim();}}
 				
-				mentioned=message.mentions.members.first();
-				console.log(timeStamp(2)+"[ADMIN] [KICK] \""+mentioned.username+"\" ("+mentioned.id+") was KICKED from guild: "+guild.name+", channel: #"+channel.name+" due to: "+msgReasons);
+				console.log(timeStamp(2)+"[ADMIN] [KICK] \""+mentioned.user.username+"\" ("+mentioned.id+") was KICKED from guild: "+guild.name+", channel: #"+channel.name+" due to: "+msgReasons);
 				channel.send("⚠ "+mentioned+" has been 👞 __**kicked**__ from server for: **"+msgReasons+"**").catch(console.error);
 				embedMSG={
 					'color': 0xFF0000,
 					'title': 'YOU HAVE BEEN KICKED',
 					'thumbnail': {'url': config.images.kicked},
-					'description': '**From Server**: '+config.serverName+'\n**Reason**: '+msgReasons+'\n\n**By**: '+user.user+'\n**On**: '+timeStamp(1)
+					'description': '**From Server**: '+config.serverName+'\n**Reason**: '+msgReasons+'\n\n**By**: '+member.user+'\n**On**: '+timeStamp(1)
 				};
 				bot.users.get(mentioned.id).send({embed: embedMSG}).then(()=>{
 					embedMSG={
 						'color': 0xFF0000,
-						'title': '👞 "'+mentioned.username+'" WAS KICKED',
+						'title': '👞 "'+mentioned.user.username+'" WAS KICKED',
 						'thumbnail': {'url': config.images.kicked},
 						'description': '**UserID**: '+mentioned.id+'\n**UserTag**: '+mentioned+'\n'
-							+'**Reason**: '+msgReasons+'\n\n**By**: '+user.user+'\n**On**: '+timeStamp(1)
+							+'**Reason**: '+msgReasons+'\n\n**By**: '+member.user+'\n**On**: '+timeStamp(1)
 					};
 					bot.channels.get(config.modLogChannel.channelID).send({embed: embedMSG}).catch(console.error);
 					return guild.member(mentioned.id).kick().catch(console.error);
@@ -1139,7 +1386,7 @@ bot.on('message', message => {
 	
 // ############################## BAN ##############################
 	if(command==="ban"){
-		if(user.roles.has(ModR.id) || user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(ModR.id) || member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -1160,13 +1407,13 @@ bot.on('message', message => {
 					if(msgReasons.indexOf(" ")===-1){msgReasons="Check yourself!"}
 					else{msgReasons=msgReasons.trim();msgReasons=msgReasons.slice(msgReasons.indexOf(" "));msgReasons=msgReasons.trim();}}
 				
-				console.log(timeStamp(2)+"[ADMIN] [BAN] \""+mentioned.username+"\" ("+mentioned.id+") was BANNED from guild: "+guild.name+", channel: #"+channel.name+" due to: "+msgReasons);
+				console.log(timeStamp(2)+"[ADMIN] [BAN] \""+mentioned.user.username+"\" ("+mentioned.id+") was BANNED from guild: "+guild.name+", channel: #"+channel.name+" due to: "+msgReasons);
 				channel.send("⛔ "+mentioned+" has been __**banned**__ 🔨 from server for: **"+msgReasons+"**").catch(console.error);
 				embedMSG={
 					'color': 0xFF0000,
 					'title': 'YOU HAVE BEEN BANNED',
 					'thumbnail': {'url': config.images.banned},
-					'description': '**From Server**: '+config.serverName+'\n**Reason**: '+msgReasons+'\n\n**By**: '+user.user+'\n**On**: '+timeStamp(1)
+					'description': '**From Server**: '+config.serverName+'\n**Reason**: '+msgReasons+'\n\n**By**: '+member.user+'\n**On**: '+timeStamp(1)
 				};
 				bot.users.get(mentioned.id).send({embed: embedMSG}).then(()=>{
 					return guild.member(mentioned.id).ban({days: 7, reason: msgReasons}).catch(console.error);
@@ -1247,7 +1494,7 @@ bot.on('message', message => {
 	
 // ############################## FETCH DATA ##############################
 	if(command==="fetch"){
-		if(user.roles.has(AdminR.id) || user.id===config.ownerID){
+		if(member.roles.has(AdminR.id) || member.id===config.ownerID){
 			if(!args[0]){
 				embedMSG={
 					"color": 0xFF0000,
@@ -1282,9 +1529,18 @@ bot.on('message', message => {
 			if(!fetchOutput){
 				embedMSG={
 					"color": 0xFF0000,
-					"title": "⚠ No channel Output ℹ",
+					"title": "⚠ No channel Output",
 					"description": "`!fetch output <#channel>`\n"
 						+"▲ You need to setup an output/private channel"
+				};
+				return channel.send({embed: embedMSG});
+			}
+			
+			if(args[0]==="check"){
+				embedMSG={
+					"color": 0x00FF00,
+					"title": "✅ Fetch channel Output",
+					"description": "has been set to: <#"+fetchOutput+">"
 				};
 				return channel.send({embed: embedMSG});
 			}
@@ -1312,6 +1568,51 @@ bot.on('message', message => {
 						.catch(console.error)
 					}).catch(console.error)
 				}).catch(console.error)
+			}
+			
+			// FETCH ROLE
+			if(args[0]==="role"){
+				let daRolesN=guild.roles.map(r => r.name); // actual role name (case sensitive)
+				let rolesNameLC=guild.roles.map(r => r.name.toLowerCase()); // lower case for search
+				
+				let meantThis="";
+				
+				// ROLES WITH SPACES - NEW
+				let daRoles="";if(!args[2]){daRoles=args[1]}else{daRoles="";for(var x=1;x<args.length;x++){daRoles+=args[x]+" ";}daRoles=daRoles.slice(0,-1);}
+				
+				let rName=guild.roles.find(role => role.name === daRoles); 
+				if(!rName){
+					let startWord=args[1].slice(0,3).toLowerCase();
+					
+					for (var i=0;i<rolesNameLC.length;i++){
+						if(rolesNameLC[i].startsWith(startWord)){
+							meantThis += "`"+daRolesN[i]+"`, ";
+						}
+					}
+					if(!meantThis){
+						startWord=args[1].slice(0,2).toLowerCase(); meantThis="";
+						for (var i=0;i<rolesNameLC.length;i++){
+							if(rolesNameLC[i].startsWith(startWord)){
+								meantThis += "`"+daRolesN[i]+"`, ";
+							}
+						}
+					}
+					if(!meantThis){
+						startWord=args[1].slice(0,1).toLowerCase(); meantThis="";
+						for (var i=0;i<rolesNameLC.length;i++){
+							if(rolesNameLC[i].startsWith(startWord)){
+								meantThis += "`"+daRolesN[i]+"`, ";
+							}
+						}
+					}
+					if(meantThis){
+						return message.reply("I couldn't find such role, but I __found__ these **roles**: "+meantThis.slice(0,-2));
+					}
+					return message.reply("I couldn't find such role, please try again! syntax: `!fetch role <ROLE-NAME>`");
+				}
+				else {
+					return channel.send("✅ Found it! **"+daRoles+"**'s ID is: `"+rName.id+"`, "+member);
+				}				
 			}
 			
 			// FETCH ALL ROLES IDs AND NAMES
@@ -1367,11 +1668,18 @@ bot.on('message', message => {
 		if(args[0]==="ver"){
 			request("https://pgorelease.nianticlabs.com/plfe/version", function(error,response,body){
 				return channel.send("Pokémon Go **API** version: **"+body.slice(2)+"**");
-			})
+			}); return
 		}
 		if(args[0]==="status" && args[1]==="ptc"){
 			request("https://www.jooas.com/status/pokemon-trainer-club", function(error,response,body){
 				let HTMLdata=body;
+				if(HTMLdata.indexOf("<h3>Status</h3>")===-1){
+					PokeStart=HTMLdata.indexOf("|");
+					HTMLdata=HTMLdata.slice(PokeStart);
+					PokeEnds=HTMLdata.indexOf("</title>");
+					HTMLdata=HTMLdata.slice(1,PokeEnds);
+					return channel.send("⛔ Website appears to be down!\n⚠ Error: `"+HTMLdata+".`")
+				}
 				PokeStart=HTMLdata.indexOf("<h3>Status</h3>");
 				HTMLdata=HTMLdata.slice(PokeStart);
 				PokeEnds=HTMLdata.indexOf("</div>");
@@ -1385,6 +1693,13 @@ bot.on('message', message => {
 		if(args[0]==="status"){
 			request("https://www.jooas.com/status/pokemon-go", function(error,response,body){
 				let HTMLdata=body;
+				if(HTMLdata.indexOf("<h3>Status</h3>")===-1){
+					PokeStart=HTMLdata.indexOf("|");
+					HTMLdata=HTMLdata.slice(PokeStart);
+					PokeEnds=HTMLdata.indexOf("</title>");
+					HTMLdata=HTMLdata.slice(1,PokeEnds);
+					return channel.send("⛔ Website appears to be down!\n⚠ Error: `"+HTMLdata+".`")
+				}
 				PokeStart=HTMLdata.indexOf("<h3>Status</h3>");
 				HTMLdata=HTMLdata.slice(PokeStart);
 				PokeEnds=HTMLdata.indexOf("</div>");
@@ -1418,7 +1733,7 @@ bot.on('message', message => {
 					let verChecker="✅"; if(gitHubVer!==config.botVersion){ verChecker="⚠" }
 					channel.send(
 						"GitHub **Discord** Bot [`PokéHelp`] __version__: **"+gitHubVer+"**\n"
-						+"Local **Discord** Bot [`PokéHelp`] __version__: **"+config.botVersion+"** "+verChecker+"\n"
+						+"Local **Discord** Bot [`"+bot.user.username+"`] __version__: **"+config.botVersion+"** "+verChecker+"\n"
 						+"**Discord** API [`discord.js`] __version__: **"+Discord.version+"**\n"
 						+"**Node** API [`node.js`] __version__: **"+process.version+"**"
 					)
@@ -1441,8 +1756,47 @@ bot.on('message', message => {
 //
 	
 	if(command.startsWith("set")){
-		if(user.id===config.ownerID || user.roles.has(AdminR.id)){
+		if(member.id===config.ownerID || member.roles.has(AdminR.id)){
 			
+			
+			
+			
+			// DISCORD CHAT FILTER
+			if(args[0].startsWith("filter")){
+				if(args[1]==="check"){
+					embedMSG={
+						"color": 0x00FF00,
+						"title": "📝 [discordChatFilter] settings 🗒",
+						"description": "Share Links: `\""+fAdvs+"\"`\n"
+							+"Spoof Talk: `\""+fSpoof+"\"`\n"
+							+"Share Links: `\""+fLinks+"\"`"
+					};
+					return channel.send({embed: embedMSG});
+				}
+				if(args[0]==="filter-adv"){
+					if(args[1]==="on"){fAdvs="yes"; return channel.send("✅ I have **enabled** AdvFiltering in **Chat**")}
+					if(args[1]==="off"){fAdvs="no"; return channel.send("⚠ I have **disabled** AdvFiltering in **Chat**")}
+				}
+				if(args[0]==="filter-spoof"){
+					if(args[1]==="on"){fSpoof="yes"; return channel.send("✅ I have **enabled** SpoofFiltering in **Chat**")}
+					if(args[1]==="off"){fSpoof="no"; return channel.send("⚠ I have **disabled** SpoofFiltering in **Chat**")}
+				}
+				if(args[0]==="filter-inv"){
+					if(args[1]==="on"){fLinks="yes"; return channel.send("✅ I have **enabled** InviteFiltering in **Chat**")}
+					if(args[1]==="off"){fLinks="no"; return channel.send("⚠ I have **disabled** InviteFiltering in **Chat**")}
+				}
+				else{
+					embedMSG={
+						"color": 0xFF0000,
+						"title": "ℹ Available Syntax and Arguments ℹ",
+						"description": "`!set filter-adv on/off` \\\u00BB allow weblinks\n"
+							+"`!set filter-spoof on/off` \\\u00BB allow spoof-talk\n"
+							+"`!set filter-inv on/off` \\\u00BB allow user invite codes\n"
+					};
+					return channel.send({embed: embedMSG});
+				}
+			}
+            
 			// USER ASSIGNED LEVEL-ROLES
 			if(args[0]==="serverevents"){
 				if(args[1]==="on"){config.serverEvents.enabled="yes"}
@@ -1476,8 +1830,10 @@ bot.on('message', message => {
 
 
 	// RESTART THIS MODULE
-	if(command==="restart" && user.id===config.ownerID && args[0]==="admin"){
-		channel.send("♻ Restarting **Admin** (`adminBot.js`) module... please wait `3` to `5` seconds...").then(()=>{ process.exit(1) }).catch(console.error);
+	if(command==="restart" && member.id===config.ownerID){
+		if(args[0]==="admin" || args[0]==="all"){
+			channel.send("♻ Restarting **Admin** (`adminBot.js`) module... please wait `3` to `5` seconds...").then(()=>{ process.exit(1) }).catch(console.error);
+		}
 	}
 	
 });
