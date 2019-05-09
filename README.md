@@ -53,7 +53,7 @@ Installation:
    * https://discordapp.com/developers/applications/me 
 
 5. Get your application/bot to join your server by going here:
-   * https://discordapp.com/developers/tools/permissions-calculator
+   * https://finitereality.github.io/permissions-calculator/?v=0
    * Check the boxes for whatever level of power (permissions) you want your bot to have
      * Minimum requirements: manage roles, mannage channels, and manage messages
      * Manage roles, it will only be able to manage roles that are **below** his role/permissions
