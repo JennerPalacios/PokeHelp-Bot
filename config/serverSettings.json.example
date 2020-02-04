@@ -1,0 +1,164 @@
+{
+	"myDBserver": {
+		"enabled": "no",
+		"host": "localhost",
+		"user": "DATABASE_USERNAME",
+		"password": "DATABASE_PASSWORD",
+		"charset": "utf8mb4"
+	},
+	"servers": [
+		{
+			"name": "NAME_OF_YOUR_SERVER",
+			"id": "ID_OF_YOUR_SERVER",
+			"adminRoleName": "ADMIN_ROLENAME",
+			"modRoleName": "MODERATOR_ROLENAME",
+			"protectedRoles": {
+				"skipMemberIfRoleIDs": [
+					"420102118733512714",
+					"443791716181606420"
+				],
+				"skipRemovingRoleIDs": [
+					"420102118733512714",
+					"382605180434382859"
+				]
+			},
+			"trackReactions": "yes",
+			"invite": {
+				"enabled": "yes",
+				"code": "fJvqFGP"
+			},
+			"newMember": {
+				"welcomeDM": "no",
+				"roleOnJoinEnabled": "yes",
+				"roleOnJoinName": "noOb",
+				"rulesChannelID": "407309219381903372",
+				"roleAgreementRequired": "yes",
+				"roleAgreementName": "VIP"
+			},
+			"chatFilter": {
+				"allowCommandSpam": "yes",
+				"allowFoulLanguage": "yes",
+				"allowInvites": "yes",
+				"allowLinks": "yes"
+			},
+			"chatActivity": {
+				"broadCastNewLevel": "no"
+			},
+			"mainChannel": {
+				"enabled": "yes",
+				"channelID": "407405721739722752"
+			},
+			"ignoreChannels": {
+				"enabled": "yes",
+				"channelIDs": [
+					"405429383449411595",
+					"271532077650935808",
+					"356980585564209174",
+					"356730427156987905",
+					"407405721739722752"
+				]
+			},
+			"serverEvents": {
+				"joinEvents": "yes",
+				"joinPokeRandom": "yes",
+				"joinChannelID": "395306925434077205",
+				"roleChange": "yes",
+				"roleChannelID": "395306925434077205",
+				"roleSync": "yes"
+			},
+			"moderationEvents": {
+				"enabled": "yes",
+				"channelID": "407309027962257419",
+				"warnEvents": "yes",
+				"muteEvents": "yes",
+				"kickEvents": "yes",
+				"banEvents": "yes"
+			},
+			"mapPokemon": {
+				"enabled": "yes",
+				"url": "https://github.com/JennerPalacios/PokeHelp-Bot"
+			},
+			"mapRaids": {
+				"enabled": "yes",
+				"url": "https://github.com/JennerPalacios/PokeHelp-Bot"
+			},
+			"mapCoverage": {
+				"enabled": "no",
+				"url": "https://github.com/JennerPalacios/PokeHelp-Bot"
+			},
+			"teamRoles": {
+				"enabled": "yes",
+				"channelID": "407555478550347787",
+				"suffixEnabled": "yes",
+				"valor": {
+					"channelID": "415575666332008449",
+					"leadIDs": [
+						"237597448032354304"
+					],
+					"leadRoleIDs": []
+				},
+				"instinct": {
+					"channelID": "415575750855360512",
+					"leadIDs": [],
+					"leadRoleIDs": []
+				},
+				"mystic": {
+					"channelID": "415575800742543371",
+					"leadIDs": [],
+					"leadRoleIDs": []
+				}
+			},
+			"levelRoles": {
+				"enabled": "yes",
+				"selfAssignable": "no",
+				"channelID": "407137312770621450",
+				"rolePrefix": "Level ",
+				"lvlRoles": [
+					"25-29",
+					"30",
+					"31",
+					"32",
+					"33",
+					"34",
+					"35",
+					"36",
+					"37",
+					"38",
+					"39",
+					"40"
+				]
+			},
+			"selfTempRoles": {
+				"enabled": "yes",
+				"channelID": "",
+				"tempRoleIDs": [
+					"382605180434382859",
+					"387706820837507073",
+					"387706862939668480"
+				]
+			}
+		}
+	],
+	"moderationEvents": {
+		"enabled": "yes",
+		"channelID": "407309027962257419",
+		"warnEvents": "yes",
+		"muteEvents": "yes",
+		"kickEvents": "yes",
+		"banEvents": "yes"
+	},
+    "patreon": {
+        "enabled": "yes",
+        "url": "https://github.com/JennerPalacios/PokeHelp-Bot",
+        "img": "https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/patreon_icon.jpg"
+    },
+    "paypal": {
+        "enabled": "yes",
+        "url": "https://github.com/JennerPalacios/PokeHelp-Bot",
+        "img": "https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/paypal_icon.jpg"
+    },
+    "donorRoleNames": [],
+    "activeExemptRoles": [],
+    "inactiveMonthLimit": 0,
+    "inactiveWeekLimit": 1
+}

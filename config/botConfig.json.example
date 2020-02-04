@@ -1,0 +1,13 @@
+{
+    "token": "BOT_TOKEN",
+    "botID": "BOT_USER_ID",
+	"ownerID": "YOUR_USER_ID",
+	"cmdPrefix": "!",
+	"consoleLog": "commandsevents",
+	"_consoleLog_OPTIONS_FOR_ABOVE":{
+		"all": "console everything even chat > EXTREMELY SPAMMY",
+		"commands": "console only commands",
+		"commandsevents": "commands and events",
+		"events": "only events - kick,ban,mute,join,etc"
+	}
+}

@@ -1,0 +1,18 @@
+{
+	"advText": [
+		"pokehuntr","gymhuntr"
+	],
+	"foulText": [
+		"fuck","bastard","pussy","dick ","cock ","dildo","ballsack","boner","shit",
+		"bitch","twat","whore","cunt","biatch","fag","queer","nigga","jizz","buttplug",
+		"butt "," anal "," ass "
+	],
+	"DTdays": ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+	"DTmonths": ["January","February","March","April","May","June","July","August","September","October","November","December"],
+    "images": {
+        "warning": "https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/User-Warned.png",
+        "muted": "https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/Poke-muted.png",
+        "kicked": "https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/Poke-kicked.png",
+        "banned": "https://raw.githubusercontent.com/JennerPalacios/PokeHelp-Bot/master/img/Poke-banned.png"
+    }
+}
