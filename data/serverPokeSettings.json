@@ -1,0 +1,20 @@
+{
+	"pokeCity": [
+		"Pewter","Cerulean","Vermilion","Celadon","Fuchsia","Saffron","Viridian","Violet","Goldenrod","Ecruteak",
+		"Clanwood","Olivine","Blackthorn","Rustboro","Mauville","Petalburg","Fortree","Mossdeep","Sootopolis",
+		"Oreburgh","Eterna","Veilstone","Pastoria","Hearthome","Canalave","Snowpoint","Sunyshore","Straiton",
+		"Nacrene","Castelia","Nimbasa","Driftveil","Mistralton","Icirrus","Opelucid","Humilau"
+	],
+	"pokeBadge": [
+		"Boulder","Cascade","Thunder","Rainbow","Soul","Marsh","Volcano","Earth","Zephyr","Hive","Plain","Fog",
+		"Storm","Mineral","Glacier","Rising","Stone","Knuckle","Dynamo","Heat","Balance","Feather","Mind","Rain",
+		"Coal","Forest","Cobble","Fen","Relic","Mine","Icicle","Beacon","Trio","Basic","Insect","Bolt","Quake","Jet","Freeze","Legend","Toxic","Wave"
+	],
+	"pokeRegion": [
+		"Kanto","Johto","Hoenn","Sinnoh","Unova","Kalos","Alola"
+	],
+	"pokeCuttie": [
+		"Pikachu","Pichu","Bulbasaur","Charmander","Squirtle","Caterpie","Weedle","Pidgey","Rattata","Vulpix",
+		"Bellsprout","Eevee","Chikorita","Marill","Wobbuffet","Teddiursa","Treecko","Torchic","Skitty","Plusle","Minun"
+	]
+}

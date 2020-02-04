@@ -1,0 +1,110 @@
+{
+	"water": {
+		"emoji": "<:type_water:412651344885710858>",
+		"color": "0x6890f0",
+		"strength": ["Ground","Rock","Fire"],
+		"weakness": ["Grass","Electric"]
+	},
+	"steel": {
+		"emoji": "<:type_steel:412651332852383744>",
+		"color": "0xb8b8d0",
+		"strength": ["Rock","Ice","Fairy"],
+		"weakness": ["Fighting","Ground","Fire"]
+	},
+	"rock": {
+		"emoji": "<:type_rock:412651320642764820>",
+		"color": "0xb8a038",
+		"strength": ["Flying","Bug","Fire","Ice"],
+		"weakness": ["Fighting","Ground","Steel","Water","Grass"]
+	},
+	"psychic": {
+		"emoji": "<:type_psychic:412651308139675670>",
+		"color": "0xf85888",
+		"strength": ["Fighting","Poison"],
+		"weakness": ["Bug","Ghost","Dark"]
+	},
+	"poison": {
+		"emoji": "<:type_poison:412651293694361600>",
+		"color": "0xa040a0",
+		"strength": ["Grass","Fairy"],
+		"weakness": ["Ground","Psychic"]
+	},
+	"normal": {
+		"emoji": "<:type_normal:412651278888599553>",
+		"color": "0x8a8a59",
+		"strength": [],
+		"weakness": ["Fighting"]
+	},
+	"ice": {
+		"emoji": "<:type_ice:412651258306887702>",
+		"color": "0x98d8d8",
+		"strength": ["Flying","Ground","Grass","Dragon"],
+		"weakness": ["Fighting","Rock","Steel","Fire"]
+	},
+	"ground": {
+		"emoji": "<:type_ground:412651241819078658>",
+		"color": "0xe0c068",
+		"strength": ["Poison","Rock","Steel","Fire","Electric"],
+		"weakness": ["Water","Grass","Ice"]
+	},
+	"grass": {
+		"emoji": "<:type_grass:412651227474821130>",
+		"color": "0x78c850",
+		"strength": ["Ground","Rock","Water"],
+		"weakness": ["Flying","Poison","Bug","Fire","Ice"]
+	},
+	"ghost": {
+		"emoji": "<:type_ghost:412651216678420480>",
+		"color": "0x705898",
+		"strength": ["Ghost","Psychic"],
+		"weakness": ["Ghost","Dark"]
+	},
+	"flying": {
+		"emoji": "<:type_flying:412651204016078860>",
+		"color": "0xa890f0",
+		"strength": ["Fighting","Bug","Grass"],
+		"weakness": ["Rock","Electric","Ice"]
+	},
+	"fire": {
+		"emoji": "<:type_fire:412651191814586378>",
+		"color": "0xf08030",
+		"strength": ["Bug","Steel","Grass","Ice"],
+		"weakness": ["Ground","Rock","Water"]
+	},
+	"fighting": {
+		"emoji": "<:type_fighting:412651180779634688>",
+		"color": "0xc03028",
+		"strength": ["Normal","Rock","Steel","Ice","Dark"],
+		"weakness": ["Flying","Psychic","Fairy"]
+	},
+	"fairy": {
+		"emoji": "<:type_fairy:412651169400225802>",
+		"color": "0xe898e8",
+		"strength": ["Fighting","Dragon","Dark"],
+		"weakness": ["Poison","Steel"]
+	},
+	"electric": {
+		"emoji": "<:type_electric:412651156196818947>",
+		"color": "0xf8d030",
+		"strength": ["Flying","Water"],
+		"weakness": ["Ground"]
+	},
+	"dragon": {
+		"emoji": "<:type_dragon:412651116065587200>",
+		"color": "0x7038f8",
+		"strength": ["Dragon"],
+		"weakness": ["Ice","Dragon","Fairy"]
+	},
+	"dark": {
+		"emoji": "<:type_dark:412651082435788800>",
+		"color": "0x707070",
+		"strength": ["Ghost","Psychic"],
+		"weakness": ["Fighting","Bug","Fairy"]
+	},
+	"bug": {
+		"emoji": "<:type_bug:412651021240631316>",
+		"color": "0xa8b820",
+		"strength": ["Grass","Psychic","Dark"],
+		"weakness": ["Flying","Rock","Fire"]
+	}
+}
