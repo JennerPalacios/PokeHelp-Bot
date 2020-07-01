@@ -24,7 +24,9 @@ Installation:
 
 2) Discord.js (`npm install discord.js@11.6.2` « should be `ver 11.3+`) 
 
-3) SQLite (`npm install sqlite@3`) 
+3.1) SQLite (`npm install sqlite@3`)
+3.2) Optional: mySQL (`npm install mysql@2.18.1`)
+→→ if you have a database installed, you can enable it through config (instead of using sqlite)
 
 4) File-System (`npm install fs`) 
 
