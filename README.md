@@ -22,9 +22,9 @@ Installation:
 
 1) Node.js (https://nodejs.org/en/download/ `ver 8.4+`)
 
-2) Discord.js (`npm install discord.js` « should be `ver 11.3+`) 
+2) Discord.js (`npm install discord.js@11.6.2` « should be `ver 11.3+`) 
 
-3) SQLite (`npm install sqlite`) 
+3) SQLite (`npm install sqlite@3`) 
 
 4) File-System (`npm install fs`) 
 
