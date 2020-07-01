@@ -2,10 +2,14 @@ module.exports={
 	name: "seen",
 	aliases: ["lastseen"],
 	async execute(timeStamp,timeStampEmbed,cc,message,sid,botGuilds,botChannels,botUsers,botConfig,serverSettings,globalSettings,discordVersion,processVersion){
-		const mySQL=require("mysql"), sqlite=require("sqlite"); sqlite.open("./database/data.sqlite"); var myDB="disabled";
+		var myDB="disabled";
 		if(serverSettings.myDBserver){
 			if(serverSettings.myDBserver.enabled==="yes"){
+				const mySQL=require("mysql");
 				myDB=mySQL.createConnection(serverSettings.myDBserver); myDB.connect(error=>{if(error){console.info(error)}});
+			}
+			else{
+				const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 			}
 		}
 		

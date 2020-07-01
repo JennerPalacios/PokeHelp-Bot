@@ -31,8 +31,8 @@ const bot=new Discord.Client(); bot.commands=new Discord.Collection();
 //
 // DEPENDENCIES AND SETTINGS
 //
-const fs=require("fs"), request=require("request"), mySQL=require("mysql"), sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
-const botConfig=require("./config/botConfig.json"), globalSettings=require("./config/globalSettings.json"),
+const fs=require("fs"), request=require("request"), 
+	botConfig=require("./config/botConfig.json"), globalSettings=require("./config/globalSettings.json"),
 	serverPokeSettings=require("./data/serverPokeSettings.json"),
 	chuckNorris=require("./data/chuckNorris.json"),
 	pokemon=require("./data/pokemon.json"), pokemonMoves=require("./data/pokemonMoves.json"),
@@ -40,7 +40,11 @@ const botConfig=require("./config/botConfig.json"), globalSettings=require("./co
 var serverSettings=JSON.parse(fs.readFileSync("./config/serverSettings.json","utf8")), myDB="disabled";
 if(serverSettings.myDBserver){
 	if(serverSettings.myDBserver.enabled==="yes"){
+		const mySQL=require("mysql");
 		myDB=mySQL.createConnection(serverSettings.myDBserver); myDB.connect(error=>{if(error){console.info(error)}});
+	}
+	else{
+		sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 	}
 }
 
