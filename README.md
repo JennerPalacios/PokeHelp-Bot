@@ -48,8 +48,8 @@ Installation:
 2. Run command: `git clone https://github.com/JennerPalacios/PokeHelp-Bot.git`, once done cloning, open the folder.
 
 3. Open command prompt in this location or click on the handy batch file: `0---start-cmd-here---0` and type the following commands:
-   * `npm install discord.js` and
-   * `npm install sqlite` and
+   * `npm install discord.js@11.6.2` and
+   * `npm install sqlite@3` and
    * `npm install fs` and
    * `npm install request`
 
