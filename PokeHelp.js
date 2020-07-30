@@ -41,7 +41,12 @@ var serverSettings=JSON.parse(fs.readFileSync("./config/serverSettings.json","ut
 if(serverSettings.myDBserver){
 	if(serverSettings.myDBserver.enabled==="yes"){
 		const mySQL=require("mysql");
-		myDB=mySQL.createConnection(serverSettings.myDBserver); myDB.connect(error=>{if(error){console.info(error)}});
+		myDB=mySQL.createConnection(serverSettings.myDBserver);
+		myDB.connect(error=>{
+			if(error){
+				console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ACCESS"+cc.cyan+" Database "+cc.reset+"(invalid login)\nRAW: "+error.sqlMessage)
+			}
+		});
 	}
 	else{
 		sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
@@ -201,7 +206,8 @@ function getNewMember(member,channelID,agreementRequired){
 	else if(channelID){
 		assignedChannel="(<#"+channelID+">)";
 	}
-	let welcomeMSG=`Welcome to **${member.guild.name}**'s Discord, ${member}.
+	let welcomeMSG=`
+Welcome to **${member.guild.name}**'s Discord, ${member}.
 
 **FIRST**
 	Confirm your contact information with **Discord** so you can have read-access to our basic channels.
@@ -213,7 +219,9 @@ function getNewMember(member,channelID,agreementRequired){
 **LASTLY:**
 	Enjoy and have fun catching awesome **Pokemon** while using our services. Meet other trainers, and try to attend our community events.
 
--<@${botConfig.ownerID}>`;
+-<@${botConfig.ownerID}>
+`
+;
 	member.send(welcomeMSG)
 	.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs or has blocked me"));
 }
@@ -355,9 +363,43 @@ setInterval(function(){
 					let rows=results;
 					for(let rowNumber="0"; rowNumber<rows.length; rowNumber++){
 						dbTime=rows[rowNumber].endDate; daysLeft=(dbTime*1)-(timeNow*1);
+						
+						sid=getGuild(rows[rowNumber].guildID);if(sid===undefined){return}
+						member=bot.guilds.get(rows[rowNumber].guildID).members.get(rows[rowNumber].userID) || "notFound";
+						
+						if(serverSettings.servers[sid].id){
+							if(serverSettings.servers[sid].tempRoles){
+								if(serverSettings.servers[sid].tempRoles.remindAtDays){
+									let daysRemaining=Math.ceil(daysLeft/86400000), remindAt=(serverSettings.servers[sid].tempRoles.remindAtDays*1), dayORdays=" day";
+									if(serverSettings.servers[sid].tempRoles.remindAtDays>1){dayORdays=" days"}
+									if(daysRemaining===remindAt){
+										myDB.query(`UPDATE PokeHelp_bot.temporaryRoles SET reminderSent=? WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}";`,
+											["yes"],error=>{
+												if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"UPDATE"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error);}
+											}
+										);
+										if(rows[rowNumber].reminderSent===null || rows[rowNumber].reminderSent==="no"){
+											if(member!=="notFound"){
+												
+												if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat"){
+													console.info(timeStamp()+" "+cc.lblue+rows[rowNumber].userName+cc.reset+"'s "
+													+cc.green+"temporary role"+cc.reset+" is expiring soon, sending notification..."+cc.reset);
+												}
+												member.send(
+													"⚠ <@"+rows[rowNumber].userID+">, you will **lose** your role: **"+rows[rowNumber].temporaryRole+"** "
+													+"in `"+daysRemaining+dayORdays+"`. Please contact <@"+botConfig.ownerID
+													+"> if you wish to renew your **temporary role**."
+												)
+												.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
+											}
+										}
+									}
+								}
+							}
+						}
+						
+						
 						if(daysLeft<1){
-							sid=getGuild(rows[rowNumber].guildID);if(sid===undefined){return}
-							member=bot.guilds.get(rows[rowNumber].guildID).members.get(rows[rowNumber].userID) || "notFound";
 							if(member==="notFound"){
 								if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat" || botConfig.consoleLog==="cmdsevents" || botConfig.consoleLog==="events"){
 									console.info(
@@ -387,11 +429,13 @@ setInterval(function(){
 									}
 								}
 							}
-							member.send(
-								"⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"+rows[rowNumber].temporaryRole+"** - your **temporary**"
-								+"access has __EXPIRED__ 😭 \nPlease contact <@"+botConfig.ownerID+"> if you wish to renew your **temporary role**."
-							)
-							.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
+							if(member!=="notFound"){
+								member.send(
+									"⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"+rows[rowNumber].temporaryRole+"** - your **temporary**"
+									+"access has __EXPIRED__ 😭 \nPlease contact <@"+botConfig.ownerID+"> if you wish to renew your **temporary role**."
+								)
+								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
+							}
 							console.log(
 								timeStamp()+" "+cc.cyan+member.user.username+cc.reset+"("+cc.lblue+member.id+cc.reset+") have lost their "
 								+cc.green+"temporary"+cc.reset+" role: "+cc.red+rows[rowNumber].temporaryRole+cc.reset+", in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset
@@ -489,7 +533,7 @@ setInterval(function(){
 // 43200000 = 12hrs
 // 21600000 = 6hrs
 // 10800000 = 3hrs
-// 3600000 = 1hr
+// 3600000 = 1hr <-
 // 1800000 = 30mins
 
 
@@ -552,6 +596,14 @@ bot.on("ready", ()=>{
 		// CREATE TABLE TEMPORARY ROLES
 		myDB.query(`CREATE TABLE IF NOT EXISTS PokeHelp_bot.temporaryRoles (userID TEXT,userName TEXT,temporaryRole TEXT,guildID TEXT,guildName TEXT,startDate TEXT,endDate TEXT,addedByID TEXT,addedByName TEXT);`,error=>{
 			if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"CREATE TABLE"+cc.cyan+" temporaryRoles "+cc.reset+"in database\nRAW: "+error)}
+		});
+		myDB.query(`SELECT reminderSent FROM PokeHelp_bot.temporaryRoles;`,async (error,results)=>{
+			if(error){console.info(timeStamp()+" "+cc.hlyellow+" WARNING "+cc.reset+" Could not "+cc.yellow+"SELECT reminderSent FROM"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error
+				+"\n"+timeStamp()+" Column above did not exist. Adding column to table...");
+				myDB.query(`ALTER TABLE PokeHelp_bot.temporaryRoles ADD COLUMN reminderSent TEXT AFTER addedByName;`,error=>{
+					if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ALTER TABLE"+cc.cyan+" temporaryRoles "+cc.reset+"in database\nRAW: "+error)}
+				});
+			}
 		});
 
 		// CREATE TABLE TEMPORARY SELF ROLES
@@ -700,8 +752,8 @@ bot.on("guildMemberAdd", member=>{
 //
 // BAN EVENT
 //
-bot.on("guildBanAdd",(guild,user)=>{
-	let sid=getGuild(guild.id);if(sid===undefined){return} let logginChannel="";
+bot.on("guildBanAdd",async (guild,user)=>{
+	let sid=await getGuild(guild.id);if(sid===undefined){return} let logginChannel="";
 	if(serverSettings.servers[sid].id){
 		if(serverSettings.servers[sid].moderationEvents){
 			if(serverSettings.servers[sid].moderationEvents.channelID){
