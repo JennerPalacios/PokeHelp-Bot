@@ -2,7 +2,7 @@ module.exports={
 	name: "reactions",
 	aliases: ["rt","rl","reaction","reactiontracker","reactionlistener"],
 	async execute(timeStamp,timeStampEmbed,cc,message,sid,botGuilds,botChannels,botUsers,botConfig,serverSettings,globalSettings,discordVersion,processVersion){
-		const Discord=require("discord.js"); var myDB="disabled";
+		const Discord=require("discord.js"); var myDB="disabled", sqlite="disabled";
 		if(serverSettings.myDBserver){
 			if(serverSettings.myDBserver.enabled==="yes"){
 				const mySQL=require("mysql");
@@ -14,7 +14,7 @@ module.exports={
 				});
 			}
 			else{
-				const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
+				sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 			}
 		}
 		

@@ -14,7 +14,7 @@ module.exports={
 				});
 			}
 			else{
-				const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
+				sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 			}
 		}
 		
@@ -226,7 +226,8 @@ module.exports={
 									[newFinalDate,"no"])
 								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"UPDATE"+cc.cyan+" temporaryRoles"+cc.reset+" table | "+error.message));
 								
-								return channel.send("✅ This member already has this **temporary** role... therefore I have added **"+args[1]+"** more days, "+member);
+								return channel.send("🎉 "+mentionMember+"'s **temporary** role: **"+roleSearched+"** has been extended by **"+args[1]+"** more days. "
+												+"They will lose this role on: `"+finalDate+"`");
 							}
 							else{
 								let curDate=new Date().getTime(); let finalDateDisplay=new Date(); 

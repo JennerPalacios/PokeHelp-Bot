@@ -14,7 +14,7 @@ module.exports={
 				});
 			}
 			else{
-				const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
+				sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 			}
 		}
 		
