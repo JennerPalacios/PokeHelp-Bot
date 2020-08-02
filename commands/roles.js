@@ -28,7 +28,9 @@ module.exports={
 				"color": 0xFF0000,
 				"title": "ℹ Available Syntax and Arguments ℹ",
 				"description": "```md\n"+botConfig.cmdPrefix+"roles count\n"
+					+botConfig.cmdPrefix+"roles list\n"
 					+botConfig.cmdPrefix+"roles search <roleName>\n"
+					+botConfig.cmdPrefix+"role info <roleName>\n"
 					+botConfig.cmdPrefix+"role <@mention/id> <roleName>\n"
 					+botConfig.cmdPrefix+"role remove <@mention/id> <roleName>```"
 			}
@@ -39,11 +41,55 @@ module.exports={
 				return channel.send(embedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 			}
 			else{
-				if(args[0]==="count"){
+				if(args[0]==="count" || args[0]==="c"){
 					return channel.send("✅ There are **"+guild.roles.size+"** roles on this server, "+member)
 						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 				}
-				if(args[0]==="search" || args[0]==="find"){
+				if(args[0]==="list" || args[0]==="l"){
+					let rolesList=await guild.roles.map(r=>r.name);rolesList=rolesList.slice(1);
+					return channel.send("✅ Role List: ```md\n"+rolesList.join(", ")+"```")
+						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+				}
+				if(args[0]==="info" || args[0]==="i"){
+						let actualRoles=guild.roles.map(r=>r.name),actualRolesLowerCase=guild.roles.map(r=>r.name.toLowerCase()),
+							roleSearchedLC=args.slice(1).join(" "),roleSearched=ARGS.slice(1).join(" "),meantThis=[];
+						
+						let roleFound=guild.roles.find(role=>role.name===roleSearched);
+						if(!roleFound){
+							let startWord=args[1].slice(0,3).toLowerCase();
+							for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
+							if(meantThis.length<0){
+								let startWord=args[1].slice(0,2).toLowerCase();
+								for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
+							}
+							if(meantThis.length<0){
+								let startWord=args[1].slice(0,1).toLowerCase();
+								for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
+							}
+							if(meantThis.length>0){
+								return channel.send("⛔ I couldn't find such role, but I found these **roles**: `"+meantThis.join("`, `")+"`, "+member)
+									.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+							}
+							return channel.send("⛔ I couldn't find such role, please try again "+member+"```md\n"+botConfig.cmdPrefix+"roles search <roleName>```")
+								.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+						}
+						else{
+							//return console.info(roleFound);//
+							embedMSG={
+								"embed":{
+									"color": 0x00FF00,
+									"title": "📊 Role: "+roleSearched+" » Info 📈",
+									"fields": [
+										{"name": "ℹ️ Role ID:", "value": "`"+roleFound.id+"`", "inline": false},
+										{"name": "🗨️ Mentionable:", "value": "`"+roleFound.mentionable+"`", "inline": false},
+										{"name": "👥 MembersWithRole:", "value": "`"+roleFound.guild.memberCount+"`", "inline": false}
+									]
+								}
+							};
+							return channel.send(embedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+						}
+				}
+				if(args[0]==="search" || args[0]==="find" || args[0]==="s" || args[0]==="f"){
 					if(args.length<2){
 						embedMSG={
 							"embed": {
