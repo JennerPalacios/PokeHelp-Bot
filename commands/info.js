@@ -3,7 +3,7 @@ module.exports={
 	name: "info",
 	aliases: ["i"],
 	async execute(timeStamp,timeStampEmbed,cc,message,sid,botGuilds,botChannels,botUsers,botConfig,serverSettings,globalSettings,discordVersion,processVersion){
-		var myDB="disabled";
+		var myDB="disabled", sqlite="disabled";
 		if(serverSettings.myDBserver){
 			if(serverSettings.myDBserver.enabled==="yes"){
 				const mySQL=require("mysql");
@@ -15,7 +15,7 @@ module.exports={
 				});
 			}
 			else{
-				const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
+				sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 			}
 		}
 		
