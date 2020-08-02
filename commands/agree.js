@@ -2,7 +2,7 @@ module.exports={
 	name: "agree",
 	aliases: [],
 	async execute(timeStamp,timeStampEmbed,cc,message,sid,botGuilds,botChannels,botUsers,botConfig,serverSettings,globalSettings,discordVersion,processVersion){
-		var myDB="disabled";
+		var myDB="disabled", sqlite="disabled";
 		if(serverSettings.myDBserver){
 			if(serverSettings.myDBserver.enabled==="yes"){
 				const mySQL=require("mysql");
