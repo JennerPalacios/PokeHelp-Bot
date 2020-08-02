@@ -37,7 +37,7 @@ const fs=require("fs"), request=require("request"),
 	chuckNorris=require("./data/chuckNorris.json"),
 	pokemon=require("./data/pokemon.json"), pokemonMoves=require("./data/pokemonMoves.json"),
 	pokemonTypes=require("./data/pokemonTypes.json"), pokemonTrivia=require("./data/pokemonTrivia.json");
-var serverSettings=JSON.parse(fs.readFileSync("./config/serverSettings.json","utf8")), myDB="disabled";
+var serverSettings=JSON.parse(fs.readFileSync("./config/serverSettings.json","utf8")), myDB="disabled", sqlite="disabled";
 if(serverSettings.myDBserver){
 	if(serverSettings.myDBserver.enabled==="yes"){
 		const mySQL=require("mysql");
@@ -49,7 +49,7 @@ if(serverSettings.myDBserver){
 		});
 	}
 	else{
-		const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
+		sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
 	}
 }
 
@@ -450,7 +450,7 @@ process.on("unhandledRejection",error=>console.log(timeStamp()+" "+cc.hlred+" ER
 // BOT SIGNED IN AND IS READY
 //
 bot.on("ready", ()=>{
-	botConfig.botVersion="3.1";
+	botConfig.botVersion="3.2";
 	console.info(timeStamp()+" -- DISCORD HELPBOT: "+cc.yellow+bot.user.username+cc.reset+", IS "+cc.green+"READY"+cc.reset+"! --");
 
 	// VERSION CHECKER
@@ -499,8 +499,9 @@ bot.on("ready", ()=>{
 			if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"CREATE TABLE"+cc.cyan+" temporaryRoles "+cc.reset+"in database\nRAW: "+error)}
 		});
 		myDB.query(`SELECT reminderSent FROM PokeHelp_bot.temporaryRoles;`,async (error,results)=>{
-			if(error){console.info(timeStamp()+" "+cc.hlyellow+" WARNING "+cc.reset+" Could not "+cc.yellow+"SELECT reminderSent FROM"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error
-				+"\n"+timeStamp()+" Column above did not exist. Adding column to table...");
+			if(error){
+				console.info(timeStamp()+" "+cc.hlblue+" WARNING "+cc.reset+" Could not "+cc.yellow+"SELECT reminderSent FROM"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error
+					+"\n"+timeStamp()+" Column above did not exist. Adding column to table...");
 				myDB.query(`ALTER TABLE PokeHelp_bot.temporaryRoles ADD COLUMN reminderSent TEXT AFTER addedByName;`,error=>{
 					if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ALTER TABLE"+cc.cyan+" temporaryRoles "+cc.reset+"in database\nRAW: "+error)}
 				});
@@ -533,6 +534,13 @@ bot.on("ready", ()=>{
 		// TEMPORARY ROLES
 		sqlite.run(`CREATE TABLE IF NOT EXISTS temporaryRoles (userID TEXT, userName TEXT, temporaryRole TEXT, guildID TEXT, guildName TEXT, startDate TEXT, endDate TEXT, addedByID TEXT, addedByName TEXT);`)
 		.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"CREATE TABLE"+cc.cyan+" temporaryRoles "+cc.reset+"in database | "+error.message));
+		sqlite.all(`SELECT reminderSent FROM temporaryRoles`)
+		.catch(err=>{
+			sqlite.run(`ALTER TABLE temporaryRoles ADD COLUMN reminderSent TEXT AFTER addedByName;`)
+			.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ALTER"+cc.cyan+" temporaryRoles"+cc.reset+" table | "+error.message));
+			console.info(timeStamp()+" "+cc.hlblue+" NOTICE "+cc.reset+" Could not "+cc.yellow+"SELECT reminderSent FROM"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+err.message
+				+"\n"+timeStamp()+" Column above did not exist. Adding column to table...")
+		});
 
 		// TEMPORARY SELF ROLES
 		sqlite.run(`CREATE TABLE IF NOT EXISTS temporarySelfTag (userID TEXT, userName TEXT, temporaryTag TEXT, guildID TEXT, guildName TEXT, startDate TEXT, endDate TEXT);`)
