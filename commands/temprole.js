@@ -6,7 +6,12 @@ module.exports={
 		if(serverSettings.myDBserver){
 			if(serverSettings.myDBserver.enabled==="yes"){
 				const mySQL=require("mysql");
-				myDB=mySQL.createConnection(serverSettings.myDBserver); myDB.connect(error=>{if(error){console.info(error)}});
+				myDB=mySQL.createConnection(serverSettings.myDBserver);
+				myDB.connect(error=>{
+					if(error){
+						console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ACCESS"+cc.cyan+" Database "+cc.reset+"(invalid login)\nRAW: "+error.sqlMessage)
+					}
+				});
 			}
 			else{
 				const sqlite=require("sqlite"); sqlite.open("./database/data.sqlite");
@@ -181,13 +186,16 @@ module.exports={
 							else{
 								if(results.length>0){
 									let newFinalDate=((args[1])*(dateMultiplier)); newFinalDate=((results[0].endDate*1)+(newFinalDate*1));
-									myDB.query(`UPDATE PokeHelp_bot.temporaryRoles SET endDate=? WHERE userID="${mentionMember.id}" AND temporaryRole="${roleSearched}" AND guildID="${serverSettings.servers[sid].id}";`,
-										[newFinalDate],error=>{
+									let endDateVal=new Date(); endDateVal.setTime(newFinalDate);
+									finalDate=(endDateVal.getMonth()+1)+"/"+endDateVal.getDate()+"/"+endDateVal.getFullYear();
+									myDB.query(`UPDATE PokeHelp_bot.temporaryRoles SET endDate=?, reminderSent=? WHERE userID="${mentionMember.id}" AND temporaryRole="${roleSearched}" AND guildID="${serverSettings.servers[sid].id}";`,
+										[newFinalDate,"no"],error=>{
 											if(error){
 												console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"UPDATE"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error);
 											}
 											else{
-												return channel.send("✅ This member already has this **temporary** role... therefore I have added **"+args[1]+"** more days, "+member);
+												return channel.send("🎉 "+mentionMember+"'s **temporary** role: **"+roleSearched+"** has been extended by **"+args[1]+"** more days. "
+												+"They will lose this role on: `"+finalDate+"`");
 											}
 										}
 									);
@@ -214,8 +222,8 @@ module.exports={
 						.then(row=>{
 							if(row){
 								let newFinalDate=((args[1])*(dateMultiplier)); newFinalDate=((row.endDate*1)+(newFinalDate*1));
-								sqlite.run(`UPDATE temporaryRoles SET endDate=? WHERE userID="${mentionMember.id}" AND temporaryRole="${roleSearched}" AND guildID="${serverSettings.servers[sid].id}";`,
-									[newFinalDate])
+								sqlite.run(`UPDATE temporaryRoles SET endDate=?, reminderSent=? WHERE userID="${mentionMember.id}" AND temporaryRole="${roleSearched}" AND guildID="${serverSettings.servers[sid].id}";`,
+									[newFinalDate,"no"])
 								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"UPDATE"+cc.cyan+" temporaryRoles"+cc.reset+" table | "+error.message));
 								
 								return channel.send("✅ This member already has this **temporary** role... therefore I have added **"+args[1]+"** more days, "+member);

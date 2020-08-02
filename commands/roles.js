@@ -74,7 +74,7 @@ module.exports={
 								.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 						}
 						else{
-							//return console.info(roleFound);//
+							let membersWithRole=[];let searchForMembers=await guild.members.map(m=>{if(m.roles.has(roleFound.id)){membersWithRole.push(m.user.id)}});
 							embedMSG={
 								"embed":{
 									"color": 0x00FF00,
@@ -82,7 +82,7 @@ module.exports={
 									"fields": [
 										{"name": "ℹ️ Role ID:", "value": "`"+roleFound.id+"`", "inline": false},
 										{"name": "🗨️ Mentionable:", "value": "`"+roleFound.mentionable+"`", "inline": false},
-										{"name": "👥 MembersWithRole:", "value": "`"+roleFound.guild.memberCount+"`", "inline": false}
+										{"name": "👥 MembersWithRole:", "value": "`"+membersWithRole.length+"`", "inline": false}
 									]
 								}
 							};
