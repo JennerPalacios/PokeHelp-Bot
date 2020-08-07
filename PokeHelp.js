@@ -450,7 +450,7 @@ process.on("unhandledRejection",error=>console.log(timeStamp()+" "+cc.hlred+" ER
 // BOT SIGNED IN AND IS READY
 //
 bot.on("ready", ()=>{
-	botConfig.botVersion="3.2";
+	botConfig.botVersion="3.3";
 	console.info(timeStamp()+" -- DISCORD HELPBOT: "+cc.yellow+bot.user.username+cc.reset+", IS "+cc.green+"READY"+cc.reset+"! --");
 
 	// VERSION CHECKER
