@@ -98,15 +98,41 @@ module.exports={
 		}
 		
 		function warnMember(guild,channel,member){
-			console.info(timeStamp+" A warning has been sent to: "+cc.cyan+member.user.username+cc.reset+" from "+cc.purple+guild.name+cc.reset+" for inactivity");//
-			//botUsers.get(currentMember.user.id).send(warnembedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
-			//botChannels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was warned for being inactive").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
+			botUsers.get(member.user.id).send(warnembedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message+"\nMember blocked me or disabled DMs?"));
+			console.info(timeStamp+" A warning has been sent to: "+cc.cyan+member.user.username+cc.reset+" from "+cc.purple+guild.name+cc.reset+" for "+cc.red+"INACTIVITY"+cc.reset);//
 		}
 		function kickMember(guild,channel,member){
-			console.info(timeStamp+" Member: "+cc.cyan+member.user.username+cc.reset+" has been "+cc.red+"KICKED"+cc.reset+" from "+cc.purple+guild.name+cc.reset+" for inactivity");//
-			//botUsers.get(currentMember.user.id).send(kickedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
-			//botChannels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was kicked for being inactive").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
-			//currentMember.kick("User was inactive").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
+			console.info(timeStamp+" Member: "+cc.cyan+member.user.username+cc.reset+" has been "+cc.red+"KICKED"+cc.reset+" from "+cc.purple+guild.name+cc.reset+" for "+cc.red+"INACTIVITY"+cc.reset);//
+			let kickLogLocal={
+				"embed": {
+					"color": 0xFF0000,
+					"title": "⛔ \""+member.user.username+"\" WAS KICKED",
+					"thumbnail": {"url": globalSettings.images.kicked},
+					"description": "**UserID**: `"+member.user.id+"`\n**UserTag**: <@"+member.user.id+">\n"
+						+"**Reason**: Member has been inactive for more than "+inactiveLimit+" days\n\n**By**: ActivityCheck[bot]\n**On**: "+timeStampEmbed
+				}
+			};
+			let kickLogCrossServer={
+				"embed": {
+					"color": 0xFF0000,
+					"title": "⛔ \""+member.user.username+"\" WAS KICKED",
+					"thumbnail": {"url": globalSettings.images.kicked},
+					"description": "**UserID**: `"+member.user.id+"`\n**UserTag**: <@"+member.user.id+">\n"
+						+"**From Server**: "+guild.name+"\n**Reason**: Member has been inactive for more than "+inactiveLimit+" days\n\n**By**: ActivityCheck[bot]\n**On**: "+timeStampEmbed
+				}
+			};
+			if(serverSettings.servers[sid].moderationEvents){
+				if(serverSettings.servers[sid].moderationEvents.enabled==="yes"){
+					botChannels.get(serverSettings.servers[sid].moderationEvents.channelID).send(kickLogLocal).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+				}
+			}
+			if(serverSettings.moderationEvents){
+				if(serverSettings.moderationEvents.enabled==="yes"){
+					botChannels.get(serverSettings.moderationEvents.channelID).send(kickLogCrossServer).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+				}
+			}
+			botUsers.get(member.user.id).send(kickedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
+			member.kick("Member has been inactive for more than "+inactiveLimit+" days").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Could not kick member...\n"+err.message));
 		}
 		function parseDate(timeInMilliseconds){
 			let lastSeenDate=new Date();lastSeenDate.setTime(timeInMilliseconds);
@@ -524,10 +550,6 @@ module.exports={
 								}
 							};
 							return channel.send(embedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
-							
-							return channel.send("ℹ **CHAT ACTIVITY LEADER BOARD** 📝"
-								+"```JavaScript\n ## TRAINER            PTS  LVL\n|--|-----------------|-----|---|\n"+boardTxt+"```")
-							.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 						})
 					}
 				}
