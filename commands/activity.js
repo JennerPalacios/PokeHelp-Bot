@@ -99,13 +99,11 @@ module.exports={
 		
 		function warnMember(guild,channel,member){
 			console.info(timeStamp+" A warning has been sent to: "+cc.cyan+member.user.username+cc.reset+" from "+cc.purple+guild.name+cc.reset+" for inactivity");//
-			botUsers.get(botConfig.ownerID).send(warnembedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 			//botUsers.get(currentMember.user.id).send(warnembedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 			//botChannels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was warned for being inactive").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 		}
 		function kickMember(guild,channel,member){
 			console.info(timeStamp+" Member: "+cc.cyan+member.user.username+cc.reset+" has been "+cc.red+"KICKED"+cc.reset+" from "+cc.purple+guild.name+cc.reset+" for inactivity");//
-			botUsers.get(botConfig.ownerID).send(kickedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 			//botUsers.get(currentMember.user.id).send(kickedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 			//botChannels.get(config.modlogChannelID).send("User: "+currentCount+" of "+userCount+" "+currentMember.user+" was kicked for being inactive").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 			//currentMember.kick("User was inactive").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
@@ -156,7 +154,7 @@ module.exports={
 			guild.fetchMembers()
 			.then(async liveGuild=>{
 				let liveMembers=await liveGuild.members.map(m=>{guildMembers.push(m)});
-				let currentMilliseconds=1500,millisecondsToAdd=1500;inactiveCount=0;totalCount=2;//totalCount=guildMembers.length;
+				let currentMilliseconds=1500,millisecondsToAdd=1500;inactiveCount=0;totalCount=guildMembers.length;
 				if(flag==="check"){
 					channel.send("✅ Okay, I will check **"+totalCount+"** members and their activity on the server, "+member).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 				}
