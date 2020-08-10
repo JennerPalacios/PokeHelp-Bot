@@ -9,7 +9,7 @@ module.exports={
 				myDB=mySQL.createConnection(serverSettings.myDBserver);
 				myDB.connect(error=>{
 					if(error){
-						console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ACCESS"+cc.cyan+" Database "+cc.reset+"(invalid login)\nRAW: "+error.sqlMessage)
+						console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"ACCESS"+cc.cyan+" Database "+cc.reset+"(invalid login)\nRAW: "+error.sqlMessage)
 					}
 				});
 			}
@@ -39,13 +39,24 @@ module.exports={
 			return channel.send(embedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 		}
 		else{
-			if(Number.isInteger(parseInt(args[0]))){if(args[0].length>17){mentionMember=await guild.fetchMember(botUsers.get(args[0]))}}
-			if(!mentionMember.id){
+			if(Number.isInteger(parseInt(args[0]))){
+				if(args[0].length>17){
+					mentionMember=await botUsers.get(args[0]) || "notMentioned";
+					if(mentionMember==="notMentioned"){
+						return channel.send("⚠ Please `@mention` the person you want to check, "+member+"\n "
+							+"→ I don't think this member is in this server...")
+							.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+					}
+					else{
+						mentionMember=await guild.fetchMember(botUsers.get(args[0]))
+					}
+				}
+			}
+			if(mentionMember==="notMentioned"){
 				return channel.send("⚠ Please `@mention` the person you want to check, "+member)
 					.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 			}
 			else{
-				let skipDTcheck="no";
 				if(myDB!=="disabled"){
 					myDB.query(`SELECT * FROM PokeHelp_bot.chatTracker WHERE userID="${mentionMember.id}" AND guildID="${guild.id}";`,async (error,results)=>{
 						if(error){console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"SELECT * FROM"+cc.cyan+" chatTracker"+cc.reset+" table\nRAW: "+error);}
@@ -79,7 +90,7 @@ module.exports={
 								}
 
 								// LAST SEEN DATE
-								let seenDT=new Date(); seenDT.setTime(membLastSeenDate); skipDTcheck="no"
+								let seenDT=new Date(); seenDT.setTime(membLastSeenDate);
 								let seenHr=seenDT.getHours(); if(seenHr<10){seenHr="0"+seenHr} let seenMin=seenDT.getMinutes(); if(seenMin<10){seenMin="0"+seenMin}
 								let seenDate=globalSettings.DTdays[seenDT.getDay()].slice(0,3)+", "+globalSettings.DTmonths[seenDT.getMonth()].slice(0,3)+" "+seenDT.getDate();// +", "+seenDT.getFullYear();
 								let diffMS=new Date().getTime() - membLastSeenDate;let timeAgo="";
@@ -88,22 +99,22 @@ module.exports={
 								let diffMonths=diffDays/30.41666666666667;let seenMonths=Math.floor(diffMonths%12);let seenYears=Math.floor(diffMonths/12);
 								
 								if(seenYears>0){
-									timeAgo=seenYears+"y "+seenMonths+"mo "+seenDays+"d "+seenHours+"h ago"//"+seenMinutes+"m "+seenSeconds+"s ago"
+									timeAgo=seenYears+"y "+seenMonths+"mo "+seenDays+"d "+seenHours+"h ago";
 								}
 								else if(seenMonths>0){
-									timeAgo=seenMonths+"mo "+seenDays+"d "+seenHours+"h "+seenMinutes+"m ago"//"+seenSeconds+"s ago"
+									timeAgo=seenMonths+"mo "+seenDays+"d "+seenHours+"h "+seenMinutes+"m ago";
 								}
 								else if(seenDays>0){
-									timeAgo=seenDays+"d "+seenHours+"h "+seenMinutes+"m "+seenSeconds+"s ago"
+									timeAgo=seenDays+"d "+seenHours+"h "+seenMinutes+"m "+seenSeconds+"s ago";
 								}
 								else if(seenHours>0){
-									timeAgo=seenHours+"h "+seenMinutes+"m "+seenSeconds+"s ago"
+									timeAgo=seenHours+"h "+seenMinutes+"m "+seenSeconds+"s ago";
 								}
 								else if(seenMinutes>0){
-									timeAgo=seenMinutes+"m "+seenSeconds+"s ago"
+									timeAgo=seenMinutes+"m "+seenSeconds+"s ago";
 								}
 								else if(seenSeconds>0){
-									timeAgo=seenSeconds+"s ago"
+									timeAgo=seenSeconds+"s ago";
 								}
 								timeAgo="`"+seenDate+" @ "+seenHr+":"+seenMin+"`\n(`"+timeAgo+"`)";
 								
@@ -157,7 +168,7 @@ module.exports={
 							}
 
 							// LAST SEEN DATE
-							let seenDT=new Date(); seenDT.setTime(membLastSeenDate); skipDTcheck="no"
+							let seenDT=new Date(); seenDT.setTime(membLastSeenDate);
 							let seenHr=seenDT.getHours(); if(seenHr<10){seenHr="0"+seenHr} let seenMin=seenDT.getMinutes(); if(seenMin<10){seenMin="0"+seenMin}
 							let seenDate=globalSettings.DTdays[seenDT.getDay()].slice(0,3)+", "+globalSettings.DTmonths[seenDT.getMonth()].slice(0,3)+" "+seenDT.getDate();// +", "+seenDT.getFullYear();
 							let diffMS=new Date().getTime() - membLastSeenDate;let timeAgo="";

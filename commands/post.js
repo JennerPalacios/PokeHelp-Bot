@@ -18,10 +18,10 @@ module.exports={
 					+botConfig.cmdPrefix+"post <#channel> embed <message>\n"
 					+"[▼]( define embed color )\n"
 					+botConfig.cmdPrefix+"post <#channel> color:<Hex-color> <message>\n"
-					+"[IMPORTANT]: NO # SIGN!\n"
+					+"[IMPORTANT]: HEX COLOR: NO # SIGN!\n"
 					+"# Alternatives for embed #\n"
 					+"1. Include (3xAcutes+md) <message>\n"
-					+"2. Include <title> (3xAcutes+md) <message>```"
+					+"2. Include <text> (3xAcutes+md) <message>```"
 			}
 		};
 		
@@ -60,47 +60,24 @@ module.exports={
 			else{
 				if(message.mentions.channels.first()){mentionChannel=message.mentions.channels.first()}
 				if(mentionChannel==="notMentioned"){
-					return channel.send("⚠ Please mention a `#channel` that I'm grabbing the message from, "+member)
+					return channel.send("⚠ Please mention a `#channel` to make a post on, "+member)
 						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 				}
 				else{
 					let daColor="00FF00", msgContent="", tempMSG="", msgText="", start="", end="", embedEnabled="no";
 					start=message.content.indexOf(">");start=start+2;msgContent=message.content.slice(start);
-
-					//console.info(cc.hlyellow+" msgContent #1:"+cc.reset+"\n"+msgContent);//
-					
 					if(msgContent.indexOf("color:")>-1){
-						//console.info(cc.hlyellow+" Color option enabled "+cc.reset);//
-						embedEnabled="yes";
-						tempMSG=msgContent;
-						start=tempMSG.indexOf("color:");
-						end=start+6;
+						embedEnabled="yes";tempMSG=msgContent;start=tempMSG.indexOf("color:");end=start+6;
 						let colorText=tempMSG.slice(start,end); tempMSG=tempMSG.slice(6); daColor=tempMSG.slice(0,6);
 						msgContent=msgContent.replace("color:"+daColor+" ","");
-						//console.info(cc.hlyellow+" msgContent #2:"+cc.reset+"\n"+msgContent);//
 					}
-					
 					if(args[1].startsWith("embed")){
-						//console.info(cc.hlyellow+" Embed option enabled "+cc.reset);//
-						embedEnabled="yes";
-						msgContent=msgContent.replace(" embed","");
-						msgContent=msgContent.replace(" embed\n","");
-						msgContent=msgContent.replace("embed\n","");
-						msgContent=msgContent.replace("embed ","");
-						//console.info(cc.hlyellow+" msgContent #3:"+cc.reset+"\n"+msgContent);//
+						embedEnabled="yes";msgContent=msgContent.replace(" embed","");msgContent=msgContent.replace(" embed\n","");
+						msgContent=msgContent.replace("embed\n","");msgContent=msgContent.replace("embed ","");
 					}
 					
 					if(msgContent.indexOf("```md")>-1){
-						//console.info(cc.hlyellow+" Embed option enabled "+cc.reset);//
-						tempMSG=msgContent;
-						start=tempMSG.indexOf("```md");
-						end=start+6;
-						msgText=tempMSG.slice(0,start);
-						msgContent=tempMSG.slice(end,-3);
-						//console.info(cc.hlyellow+" msgContent #4:"+cc.reset+"\n"+msgContent);//
-						
-						//tempMSG=msgContent;start=tempMSG.indexOf("```md");start=start+5;
-						//msgContent=tempMSG.slice(start,-3);
+						tempMSG=msgContent;start=tempMSG.indexOf("```md");end=start+6;msgText=tempMSG.slice(0,start);msgContent=tempMSG.slice(end,-3);
 						
 						embedMSG={
 							"embed": {

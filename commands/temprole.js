@@ -206,7 +206,7 @@ module.exports={
 									finalDateDisplay.setTime(finalDate); finalDateDisplay=(finalDateDisplay.getMonth()+1)+"/"+finalDateDisplay.getDate()+"/"+finalDateDisplay.getFullYear();
 									myDB.query(`INSERT INTO PokeHelp_bot.temporaryRoles (userID, userName, temporaryRole, guildID, guildName, startDate, endDate, addedByID, addedByName) VALUES (?,?,?,?,?,?,?,?,?)`, 
 										[mentionMember.id, mentionMember.user.username, roleSearched, guild.id, guild.name, curDate, finalDate, member.id, member.user.username],async (error,results)=>{
-										if(error){console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"SELECT * FROM"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error);}
+										if(error){console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"INSERT INTO"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error);}
 									});
 									let theirRole=guild.roles.find(role=>role.name===roleSearched);
 									mentionMember.addRole(theirRole).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));

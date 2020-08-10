@@ -157,7 +157,7 @@ module.exports={
 							+" they don't have "+cc.cyan+"@"+roleConditions[0]+cc.reset);
 						let membersWithCorrectRole=message.guild.members.filter(member=>!member.roles.has(roleCondition.id));
 						let mappedMembers=membersWithCorrectRole.map(member=>member);
-						let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+						let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 						channel.send("✅ Okay, I will **remove** `ALL` from **"+mappedMembers.length+"** members that **don't have** `@"+roleCondition.name+"` role, "+member);
 						//
 						//if(mappedMembers.length>50){mappedMembers.length=50}//
@@ -194,8 +194,8 @@ module.exports={
 									channel.send("✅ Done! I have removed `ALL` roles from **"+mappedMembers.length+"** members, "+member)
 								}
 								currentUser++;memberCount++
-							}, currentSecs);
-							currentSecs = currentSecs+secsToAdd
+							}, currentMilliseconds);
+							currentMilliseconds=currentMilliseconds+millisecondsToAdd
 						}
 						return
 					}
@@ -221,7 +221,7 @@ module.exports={
 					console.info(ts(cc)+" Removing role: "+cc.lblue+"@"+roleToRemove.name+cc.reset+" from "+cc.green+"ALL"+cc.reset+" members that have it");
 					let membersWithCorrectRole=message.guild.members.filter(member=>member.roles.has(roleToRemove.id));
 					let mappedMembers=membersWithCorrectRole.map(member=>member);
-					let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+					let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 					channel.send("✅ Okay, I will **remove** role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members that have it, "+member);
 					for(var i=0;i<mappedMembers.length;i++){
 						setTimeout(function(){
@@ -232,8 +232,8 @@ module.exports={
 								channel.send("✅ Done! I have removed role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members, "+member)
 							}
 							currentUser++;memberCount++
-						}, currentSecs);
-						currentSecs = currentSecs+secsToAdd
+						}, currentMilliseconds);
+						currentMilliseconds=currentMilliseconds+millisecondsToAdd
 					}
 					return
 				}
@@ -260,7 +260,7 @@ module.exports={
 								+" they don't have "+cc.cyan+"any other role"+cc.reset);
 							let membersWithCorrectRole=message.guild.members.filter(member=>{return member.roles.size===2 && member.roles.has(roleToRemove.id)});
 							let mappedMembers=membersWithCorrectRole.map(member=>member);
-							let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+							let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 							channel.send("✅ Okay, I will **remove** role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members that **don't have** `any` role, "+member);
 							for(var i=0;i<mappedMembers.length;i++){
 								setTimeout(function(){
@@ -271,8 +271,8 @@ module.exports={
 										channel.send("✅ Done! I have removed role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members, "+member)
 									}
 									currentUser++;memberCount++
-								}, currentSecs);
-								currentSecs = currentSecs+secsToAdd
+								}, currentMilliseconds);
+								currentMilliseconds=currentMilliseconds+millisecondsToAdd
 							}
 							return
 						}
@@ -300,7 +300,7 @@ module.exports={
 								+" they don't have "+cc.cyan+"@"+roleConditions[0]+cc.reset);
 							let membersWithCorrectRole=message.guild.members.filter(member=>{return member.roles.has(roleToRemove.id) && !member.roles.has(roleCondition.id)});
 							let mappedMembers=membersWithCorrectRole.map(member=>member);
-							let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+							let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 							channel.send("✅ Okay, I will **remove** role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members that **don't have** `@"+roleCondition.name+"` role, "+member);
 							for(var i=0;i<mappedMembers.length;i++){
 								setTimeout(function(){
@@ -311,8 +311,8 @@ module.exports={
 										channel.send("✅ Done! I have removed role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members, "+member)
 									}
 									currentUser++;memberCount++
-								}, currentSecs);
-								currentSecs = currentSecs+secsToAdd
+								}, currentMilliseconds);
+								currentMilliseconds=currentMilliseconds+millisecondsToAdd
 							}
 							return
 						}
@@ -339,7 +339,7 @@ module.exports={
 							+" they have "+cc.cyan+"@"+roleConditions[0]+cc.reset);
 						let membersWithCorrectRole=message.guild.members.filter(member=>{return member.roles.has(roleToRemove.id) && member.roles.has(roleCondition.id)});
 						let mappedMembers=membersWithCorrectRole.map(member=>member);
-						let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+						let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 						channel.send("✅ Okay, I will **remove** role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members that **have** `@"+roleCondition.name+"` role, "+member);
 						for(var i=0;i<mappedMembers.length;i++){
 							setTimeout(function(){
@@ -350,8 +350,8 @@ module.exports={
 									channel.send("✅ Done! I have removed role: `@"+roleToRemove.name+"` from **"+mappedMembers.length+"** members, "+member)
 								}
 								currentUser++;memberCount++
-							}, currentSecs);
-							currentSecs = currentSecs+secsToAdd
+							}, currentMilliseconds);
+							currentMilliseconds=currentMilliseconds+millisecondsToAdd
 						}
 						return
 						roleCondition=guild.roles.find(role=>role.name===roleConditions[0]) || "notFound";
@@ -388,7 +388,7 @@ module.exports={
 				console.info(ts(cc)+" Adding role: "+cc.lblue+"@"+roleToAdd.name+cc.reset+" to "+cc.green+"ALL"+cc.reset+" members that don't have it.");
 				let membersWithCorrectRole=message.guild.members.filter(member=>!member.roles.has(roleToAdd.id));
 				let mappedMembers=membersWithCorrectRole.map(member=>member);
-				let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+				let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 				channel.send("✅ Okay, I will **add** role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members that **don't** have it, "+member);
 				for(var i=0;i<mappedMembers.length;i++){
 					setTimeout(function(){
@@ -399,8 +399,8 @@ module.exports={
 							channel.send("✅ Done! I have added role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members, "+member)
 						}
 						currentUser++;memberCount++
-					}, currentSecs);
-					currentSecs = currentSecs+secsToAdd
+					}, currentMilliseconds);
+					currentMilliseconds=currentMilliseconds+millisecondsToAdd
 				}
 				return
 			}
@@ -426,7 +426,7 @@ module.exports={
 							+" they don't have "+cc.cyan+"any role"+cc.reset);
 						let membersWithCorrectRole=message.guild.members.filter(member=>member.roles.size===1);
 						let mappedMembers=membersWithCorrectRole.map(member=>member);
-						let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+						let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 						channel.send("✅ Okay, I will **add** role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members that **don't have** `any` role, "+member);
 						for(var i=0;i<mappedMembers.length;i++){
 							setTimeout(function(){
@@ -437,8 +437,8 @@ module.exports={
 									channel.send("✅ Done! I have added role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members, "+member)
 								}
 								currentUser++;memberCount++
-							}, currentSecs);
-							currentSecs = currentSecs+secsToAdd
+							}, currentMilliseconds);
+							currentMilliseconds=currentMilliseconds+millisecondsToAdd
 						}
 						return
 					}
@@ -465,7 +465,7 @@ module.exports={
 							+" they don't have "+cc.cyan+"@"+roleConditions[0]+cc.reset);
 						let membersWithCorrectRole=message.guild.members.filter(member=>{return !member.roles.has(roleToAdd.id) && !member.roles.has(roleCondition.id)});
 						let mappedMembers=membersWithCorrectRole.map(member=>member);
-						let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+						let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 						channel.send("✅ Okay, I will **add** role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members that **don't have** `"+roleCondition.name+"` role, "+member);
 						for(var i=0;i<mappedMembers.length;i++){
 							setTimeout(function(){
@@ -476,8 +476,8 @@ module.exports={
 									channel.send("✅ Done! I have added role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members, "+member)
 								}
 								currentUser++;memberCount++
-							}, currentSecs);
-							currentSecs = currentSecs+secsToAdd
+							}, currentMilliseconds);
+							currentMilliseconds=currentMilliseconds+millisecondsToAdd
 						}
 						return
 					}
@@ -504,7 +504,7 @@ module.exports={
 						+" they have "+cc.cyan+"@"+roleConditions[0]+cc.reset);
 					let membersWithCorrectRole=message.guild.members.filter(member=>{return !member.roles.has(roleToAdd.id) && member.roles.has(roleCondition.id)});
 					let mappedMembers=membersWithCorrectRole.map(member=>member);
-					let currentSecs=1000,secsToAdd=1500,currentUser=0,memberCount=1;
+					let currentMilliseconds=1500,millisecondsToAdd=1500,currentUser=0,memberCount=1;
 					channel.send("✅ Okay, I will **add** role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members that **have** `@"+roleCondition.name+"` role, "+member);
 					for(var i=0;i<mappedMembers.length;i++){
 						setTimeout(function(){
@@ -515,8 +515,8 @@ module.exports={
 								channel.send("✅ Done! I have added role: `@"+roleToAdd.name+"` to **"+mappedMembers.length+"** members, "+member)
 							}
 							currentUser++;memberCount++
-						}, currentSecs);
-						currentSecs = currentSecs+secsToAdd
+						}, currentMilliseconds);
+						currentMilliseconds=currentMilliseconds+millisecondsToAdd
 					}
 					return
 					roleCondition=guild.roles.find(role=>role.name===roleConditions[0]) || "notFound";

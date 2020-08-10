@@ -48,7 +48,7 @@ module.exports={
 						return channel.send("✅ "+mentionMember+" can now **type/send** messages again 👍 ... but **don't** abuse it!")
 							.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 					})
-					.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
+					.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Member already removed/unmuted?\n"+err.message));
 					return
 				}
 			}
