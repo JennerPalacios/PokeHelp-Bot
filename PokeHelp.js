@@ -450,7 +450,7 @@ process.on("unhandledRejection",error=>console.log(timeStamp()+" "+cc.hlred+" ER
 // BOT SIGNED IN AND IS READY
 //
 bot.on("ready", ()=>{
-	botConfig.botVersion="3.3";
+	botConfig.botVersion="3.5";
 	console.info(timeStamp()+" -- DISCORD HELPBOT: "+cc.yellow+bot.user.username+cc.reset+", IS "+cc.green+"READY"+cc.reset+"! --");
 
 	// VERSION CHECKER
@@ -705,6 +705,7 @@ bot.on("messageUpdate",async (oldMessage,newMessage)=>{
 			modRole={"id":"10101"};console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" I could not find "
 				+cc.red+"modRoleName"+cc.reset+": "+cc.cyan+serverSettings.servers[sid].modRoleName+cc.reset+" for server: "
 				+cc.lblue+newMessage.channel.guild.name+cc.reset+" in "+cc.purple+"serverSettings.json"+cc.reset)}
+				
 	// FOUL LANGUAGE FILTER
 	if(foulText.some(word=>newMessage.content.includes(word))){
 		let skip="no";if(member.roles.has(modRole.id) || member.roles.has(adminRole.id) || member.id===botConfig.ownerID){skip="yes"}
