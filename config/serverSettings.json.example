@@ -42,7 +42,9 @@
 				"allowLinks": "yes"
 			},
 			"chatActivity": {
-				"broadCastNewLevel": "no"
+				"broadCastNewLevel": "yes",
+				"warnInactives": "yes",
+				"inactiveDaysLimit": "15"
 			},
 			"mainChannel": {
 				"enabled": "yes",
