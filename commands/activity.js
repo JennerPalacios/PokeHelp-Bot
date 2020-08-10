@@ -238,7 +238,8 @@ module.exports={
 										let inactiveDays=parseDaysAgo(results[0].lastDate),timeAgo=parseTimeAgo(results[0].lastDate);let lastSeenDate=parseDate(results[0].lastDate);
 										if(inactiveDays>inactiveLimit){
 											if(!InactiveExempt(currentMember,guild)){
-												channel.send("⚠ [`"+n+"/"+totalCount+"`] **"+currentMember.user.username+"** has not been seen since: `"+lastSeenDate+"`, which was "+timeAgo)
+												inactiveCount++;
+												channel.send("⚠ [`"+n+"/"+totalCount+"`] #"+inactiveCount+" **"+currentMember+"** has not been seen since: `"+lastSeenDate+"`, which was "+timeAgo)
 												.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 												
 												if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat"){
@@ -250,7 +251,6 @@ module.exports={
 												else if(flag==="warn"){
 													warnMember(guild,channel,currentMember);
 												}
-												inactiveCount++;
 											}
 											else{
 												if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat"){
@@ -297,7 +297,8 @@ module.exports={
 									let inactiveDays=parseDaysAgo(row.lastDate),timeAgo=parseTimeAgo(row.lastDate);let lastSeenDate=parseDate(row.lastDate);
 									if(inactiveDays>inactiveLimit){
 										if(!InactiveExempt(currentMember,guild)){
-											channel.send("⚠ [`"+n+"/"+totalCount+"`] **"+currentMember.user.username+"** has not been seen since: `"+lastSeenDate+"`, which was "+timeAgo)
+											inactiveCount++;
+											channel.send("⚠ [`"+n+"/"+totalCount+"`] #"+inactiveCount+" **"+currentMember+"** has not been seen since: `"+lastSeenDate+"`, which was "+timeAgo)
 											.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message));
 											
 											if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat"){
@@ -309,7 +310,6 @@ module.exports={
 											else if(flag==="warn"){
 												warnMember(guild,channel,currentMember);
 											}
-											inactiveCount++;
 										}
 										else{
 											if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat"){
