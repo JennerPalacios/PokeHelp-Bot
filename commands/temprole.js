@@ -187,7 +187,7 @@ module.exports={
 								if(results.length>0){
 									let newFinalDate=((args[1])*(dateMultiplier)); newFinalDate=((results[0].endDate*1)+(newFinalDate*1));
 									let endDateVal=new Date(); endDateVal.setTime(newFinalDate);
-									finalDate=(endDateVal.getMonth()+1)+"/"+endDateVal.getDate()+"/"+endDateVal.getFullYear();
+									let finalDate=(endDateVal.getMonth()+1)+"/"+endDateVal.getDate()+"/"+endDateVal.getFullYear();
 									myDB.query(`UPDATE PokeHelp_bot.temporaryRoles SET endDate=?, reminderSent=? WHERE userID="${mentionMember.id}" AND temporaryRole="${roleSearched}" AND guildID="${serverSettings.servers[sid].id}";`,
 										[newFinalDate,"no"],error=>{
 											if(error){
@@ -222,12 +222,14 @@ module.exports={
 						.then(row=>{
 							if(row){
 								let newFinalDate=((args[1])*(dateMultiplier)); newFinalDate=((row.endDate*1)+(newFinalDate*1));
+								let endDateVal=new Date(); endDateVal.setTime(newFinalDate);
+								let finalDate=(endDateVal.getMonth()+1)+"/"+endDateVal.getDate()+"/"+endDateVal.getFullYear();
 								sqlite.run(`UPDATE temporaryRoles SET endDate=?, reminderSent=? WHERE userID="${mentionMember.id}" AND temporaryRole="${roleSearched}" AND guildID="${serverSettings.servers[sid].id}";`,
 									[newFinalDate,"no"])
 								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"UPDATE"+cc.cyan+" temporaryRoles"+cc.reset+" table | "+error.message));
 								
 								return channel.send("🎉 "+mentionMember+"'s **temporary** role: **"+roleSearched+"** has been extended by **"+args[1]+"** more days. "
-												+"They will lose this role on: `"+finalDate+"`");
+									+"They will lose this role on: `"+finalDate+"`");
 							}
 							else{
 								let curDate=new Date().getTime(); let finalDateDisplay=new Date(); 

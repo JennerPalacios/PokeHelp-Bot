@@ -51,19 +51,18 @@ module.exports={
 						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 				}
 				if(args[0]==="info" || args[0]==="i"){
-						let actualRoles=guild.roles.map(r=>r.name),actualRolesLowerCase=guild.roles.map(r=>r.name.toLowerCase()),
-							roleSearchedLC=args.slice(1).join(" "),roleSearched=ARGS.slice(1).join(" "),meantThis=[];
+						let actualRoles=guild.roles.map(r=>r.name),actualRolesLowerCase=guild.roles.map(r=>r.name.toLowerCase()),roleSearched=ARGS.slice(1).join(" "),meantThis=[];
 						
 						let roleFound=guild.roles.find(role=>role.name===roleSearched);
 						if(!roleFound){
 							let startWord=args[1].slice(0,3).toLowerCase();
 							for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
-							if(meantThis.length<0){
-								let startWord=args[1].slice(0,2).toLowerCase();
+							if(meantThis.length<1){
+								startWord=args[1].slice(0,2).toLowerCase();
 								for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
 							}
-							if(meantThis.length<0){
-								let startWord=args[1].slice(0,1).toLowerCase();
+							if(meantThis.length<1){
+								startWord=args[1].slice(0,1).toLowerCase();
 								for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
 							}
 							if(meantThis.length>0){
@@ -101,19 +100,18 @@ module.exports={
 						return channel.send(embedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 					}
 					else{
-						let actualRoles=guild.roles.map(r=>r.name),actualRolesLowerCase=guild.roles.map(r=>r.name.toLowerCase()),
-							roleSearchedLC=args.slice(1).join(" "),roleSearched=ARGS.slice(1).join(" "),meantThis=[];
+						let actualRoles=guild.roles.map(r=>r.name),actualRolesLowerCase=guild.roles.map(r=>r.name.toLowerCase()),roleSearched=ARGS.slice(1).join(" "),meantThis=[];
 						
 						let roleFound=guild.roles.find(role=>role.name===roleSearched);
 						if(!roleFound){
 							let startWord=args[1].slice(0,3).toLowerCase();
 							for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
-							if(meantThis.length<0){
-								let startWord=args[1].slice(0,2).toLowerCase();
+							if(meantThis.length<1){
+								startWord=args[1].slice(0,2).toLowerCase();
 								for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
 							}
-							if(meantThis.length<0){
-								let startWord=args[1].slice(0,1).toLowerCase();
+							if(meantThis.length<1){
+								startWord=args[1].slice(0,1).toLowerCase();
 								for(var i=0;i<actualRolesLowerCase.length;i++){if(actualRolesLowerCase[i].startsWith(startWord)){meantThis.push(actualRoles[i])}}
 							}
 							if(meantThis.length>0){

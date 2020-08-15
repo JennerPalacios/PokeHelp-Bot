@@ -36,20 +36,42 @@ module.exports={
 				return channel.send(embedMSG).catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 			}
 			else{
+				if(args[0]==="all"){
+					console.info(timeStamp+" Unmuting ALL members from: "+cc.purple+"#"+channel.name+cc.reset)
+					let i=0, chanPerms=await channel.permissionOverwrites.map(perms=>perms.id);
+					for(id in chanPerms){
+						if(channel.permissionOverwrites.get(chanPerms[id]).type==="member"){
+							channel.permissionOverwrites.get(chanPerms[id]).delete()
+							.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+							if(botConfig.consoleLog==="all"){
+								console.info(timeStamp+" "+cc.cyan+botUsers.get(chanPerms[id]).username+cc.reset+" has been "
+									+cc.green+"unmuted"+cc.reset+" from channel: "+cc.purple+"#"+channel.name+cc.reset)
+							}
+						}
+					}
+					return channel.send("✅ All members on this channel have been **unmuted**, "+member)
+					.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+				}
 				if(Number.isInteger(parseInt(args[0]))){if(args[0].length>17){mentionMember=await guild.fetchMember(botUsers.get(args[0]))}}
 				if(!mentionMember.id){
 					return channel.send("⚠ Please `@mention` a person you want me to **unmute**, "+member)
 						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 				}
 				else{
-					message.delete();
-					channel.permissionOverwrites.get(mentionMember.id).delete()
-					.then(()=>{
-						return channel.send("✅ "+mentionMember+" can now **type/send** messages again 👍 ... but **don't** abuse it!")
-							.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
-					})
-					.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Member already removed/unmuted?\n"+err.message));
-					return
+					if(!channel.permissionOverwrites.get(mentionMember.id)){
+						return channel.send("⛔ <@"+mentionMember.id+"> has not been muted in this channel, "+member)
+						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+					}
+					else{
+						return channel.permissionOverwrites.get(mentionMember.id).delete()
+						.then(()=>{
+							console.info(timeStamp+" "+cc.cyan+mentionMember.user.username+cc.reset+" has been "+cc.green+"unmuted"
+								+cc.reset+" from channel: "+cc.purple+"#"+channel.name+cc.reset+", by: "+cc.red+member.user.username+cc.reset+"("+member.user.id+")")
+							return channel.send("✅ "+mentionMember+" can now **type/send** messages again 👍 ... but **don't** abuse it!")
+								.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
+						})
+						.catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" Member already removed/unmuted?\n"+err.message))
+					}
 				}
 			}
 		}
