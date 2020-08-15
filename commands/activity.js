@@ -162,15 +162,25 @@ module.exports={
 			if(currentMember.user.bot || currentMember.roles.has(modRole.id) || currentMember.roles.has(adminRole.id) || currentMember.id===botConfig.ownerID){
 				exempt=true
 			}
-			for(roleName in serverSettings.servers[sid].protectedRoles.skipMemberIfRoleIDs){
-				if(exempt){break}
-				let memberRole=guild.roles.find(role=>role.id===serverSettings.servers[sid].protectedRoles.skipMemberIfRoleIDs[roleName]);
-				exempt=currentMember.roles.has(memberRole.id)
-			}
-			for(roleName in serverSettings.servers[sid].protectedRoles.skipRemovingRoleIDs){
-				if(exempt){break}
-				let memberRole=guild.roles.find(role=>role.id===serverSettings.servers[sid].protectedRoles.skipRemovingRoleIDs[roleName]);
-				exempt=currentMember.roles.has(memberRole.id);
+			if(serverSettings.servers[sid].protectedRoles){
+				if(serverSettings.servers[sid].protectedRoles.skipMemberIfRoleIDs){
+					if(serverSettings.servers[sid].protectedRoles.skipMemberIfRoleIDs.length>0){
+						for(roleName in serverSettings.servers[sid].protectedRoles.skipMemberIfRoleIDs){
+							if(exempt){break}
+							let memberRole=guild.roles.find(role=>role.id===serverSettings.servers[sid].protectedRoles.skipMemberIfRoleIDs[roleName]);
+							exempt=currentMember.roles.has(memberRole.id)
+						}
+					}
+				}
+				if(serverSettings.servers[sid].protectedRoles.skipRemovingRoleIDs){
+					if(serverSettings.servers[sid].protectedRoles.skipRemovingRoleIDs.length>0){
+						for(roleName in serverSettings.servers[sid].protectedRoles.skipRemovingRoleIDs){
+							if(exempt){break}
+							let memberRole=guild.roles.find(role=>role.id===serverSettings.servers[sid].protectedRoles.skipRemovingRoleIDs[roleName]);
+							exempt=currentMember.roles.has(memberRole.id);
+						}
+					}
+				}
 			}
 			return exempt;
 		}
