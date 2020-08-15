@@ -25,7 +25,7 @@ SOFTWARE.
 // DISCORD JS
 //
 const Discord=require("discord.js");
-const bot=new Discord.Client(); bot.commands=new Discord.Collection();
+const bot=new Discord.Client({fetchAllMembers: true}); bot.commands=new Discord.Collection();
 
 
 //
@@ -36,7 +36,7 @@ const fs=require("fs"), request=require("request"),
 	serverPokeSettings=require("./data/serverPokeSettings.json"),
 	chuckNorris=require("./data/chuckNorris.json"),
 	pokemon=require("./data/pokemon.json"), pokemonMoves=require("./data/pokemonMoves.json"),
-	pokemonTypes=require("./data/pokemonTypes.json"), pokemonTrivia=require("./data/pokemonTrivia.json");
+	pokemonTypes=require("./data/pokemonTypes.json");
 var serverSettings=JSON.parse(fs.readFileSync("./config/serverSettings.json","utf8")), myDB="disabled", sqlite="disabled";
 if(serverSettings.myDBserver){
 	if(serverSettings.myDBserver.enabled==="yes"){
@@ -450,7 +450,7 @@ process.on("unhandledRejection",error=>console.log(timeStamp()+" "+cc.hlred+" ER
 // BOT SIGNED IN AND IS READY
 //
 bot.on("ready", ()=>{
-	botConfig.botVersion="3.5";
+	botConfig.botVersion="3.7";
 	console.info(timeStamp()+" -- DISCORD HELPBOT: "+cc.yellow+bot.user.username+cc.reset+", IS "+cc.green+"READY"+cc.reset+"! --");
 
 	// VERSION CHECKER
@@ -834,15 +834,6 @@ bot.on("message",message=>{
 	}
 	if(myDB!=="disabled"){
 		myDB.query(`SELECT * FROM PokeHelp_bot.chatTracker WHERE userID="${member.id}" AND guildID="${guild.id}";`,(error,results)=>{
-			let curTime=new Date().getTime(), points2add=1;
-			if(args.length>5){
-				if(args.length>9){points2add=2.5}if(args.length>14){points2add=3.5}
-				if(args.length>19){points2add=5.5}if(args.length>24){points2add=6.5}
-				if(args.length>29){points2add=8.5}if(args.length>34){points2add=9.5}
-				if(args.length>39){points2add=11.5}if(args.length>44){points2add=12.5}
-				if(args.length>49){points2add=14.5}if(args.length>54){points2add=15.5}
-				if(args.length>59){points2add=17.5}if(args.length>64){points2add=18.5}
-			}
 			if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" Could not "+cc.yellow+"SELECT * FROM"+cc.cyan+" chatTracker"+cc.reset+" table\nRAW: "+error);}
 			else{
 				if(results.length<1){
