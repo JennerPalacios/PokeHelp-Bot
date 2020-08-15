@@ -10,14 +10,13 @@ function shuffle(array) {
 	}
 	return array;
 }
-var qTimer=5, qTimerMultiplier=1000, qNumber=[], triviaQA="", triviaAutoState="stopped", singleQuestion="no", muteMember="no",
+var qTimer=30, qTimerMultiplier=1000, qNumber=[], triviaQA="", triviaAutoState="stopped", singleQuestion="no", muteMember="no",
 	roleEnabled="no", temporaryRoleEnabled="no", roleObject="", temporaryRoleObject="", temporaryRoleDays="";
 for(let n=0;n<pokeTrivia.length;n++){
 	qNumber.push(n)
 }
 var shuffledTrivia=shuffle(qNumber);
 var triviaQA=pokeTrivia[shuffledTrivia[0]];
-console.info("[1]\nQuestion: "+triviaQA.question+"\nAnswer: "+triviaQA.answers.join(", "));//
 const filter=response=>{return triviaQA.answers.some(answer=>response.content.toLowerCase().includes(answer.toLowerCase()))};
 function triviaLaunch(guild,channel,action,myDB,sqlite,botInfo,timeStamp,cc){
 	embedMSG={
@@ -35,7 +34,6 @@ function triviaLaunch(guild,channel,action,myDB,sqlite,botInfo,timeStamp,cc){
 	if(action==="reset"){
 		shuffledTrivia=shuffle(qNumber);
 		triviaQA=pokeTrivia[shuffledTrivia[0]];
-		console.info("[2]\nQuestion: "+triviaQA.question+"\nAnswer: "+triviaQA.answers.join(", "));//
 		return channel.send("Restarting **trivia**, please wait...").catch(err=>console.info(timeStamp+" "+cc.hlred+" ERROR "+cc.reset+" "+err.message))
 	}
 	if(action==="resume"){
@@ -43,7 +41,6 @@ function triviaLaunch(guild,channel,action,myDB,sqlite,botInfo,timeStamp,cc){
 		return triviaLaunch(guild,channel,"postQuestion");
 	}
 	if(action==="postQuestion"){
-		console.info("[3]\nQuestion: "+triviaQA.question+"\nAnswer: "+triviaQA.answers.join(", "));//
 		if(shuffledTrivia.length>0){
 			channel.send(embedMSG)
 			.then(()=>{
@@ -145,7 +142,6 @@ function triviaLaunch(guild,channel,action,myDB,sqlite,botInfo,timeStamp,cc){
 					}
 					shuffledTrivia.shift();
 					triviaQA=pokeTrivia[shuffledTrivia[0]];
-					console.info("[4]\nQuestion: "+triviaQA.question+"\nAnswer: "+triviaQA.answers.join(", "));//
 					if(triviaAutoState==="run"){
 						triviaLaunch(guild,channel,"postQuestion",myDB,sqlite,botInfo,timeStamp,cc)
 					}
@@ -159,7 +155,6 @@ function triviaLaunch(guild,channel,action,myDB,sqlite,botInfo,timeStamp,cc){
 					}
 					shuffledTrivia.shift();
 					triviaQA=pokeTrivia[shuffledTrivia[0]];
-					console.info("[5]\nQuestion: "+triviaQA.question+"\nAnswer: "+triviaQA.answers.join(", "));//
 					if(triviaAutoState==="run"){
 						triviaLaunch(guild,channel,"postQuestion",myDB,sqlite,botInfo,timeStamp,cc)
 					}
