@@ -275,14 +275,7 @@ setInterval(function(){
 							}
 						}
 						if(daysLeft<1){
-							if(member==="notFound"){
-								if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat" || botConfig.consoleLog==="cmdsevents" || botConfig.consoleLog==="events"){
-									console.info(
-										timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+cc.cyan+rows[rowNumber].userName+cc.reset+"("+cc.lblue+rows[rowNumber].userID+cc.reset
-										+") was not found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | They will be removed from "+cc.cyan+"TemporaryRoles"+cc.reset+" DataBase"
-									);
-								}
-							}
+							let finalName=rows[rowNumber].userName, finalID=rows[rowNumber].userID;
 							if(serverSettings.servers[sid].id){
 								if(serverSettings.servers[sid].serverEvents){
 									if(serverSettings.servers[sid].serverEvents.roleChannelID){
@@ -304,28 +297,39 @@ setInterval(function(){
 									}
 								}
 							}
-							if(member!=="notFound"){
-								member.send(
-									"⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"+rows[rowNumber].temporaryRole+"** - your **temporary**"
-									+"access has __EXPIRED__ 😭 \nPlease contact <@"+botConfig.ownerID+"> if you wish to renew your **temporary role**."
-								)
-								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
-							}
-							console.log(
-								timeStamp()+" "+cc.cyan+member.user.username+cc.reset+"("+cc.lblue+member.id+cc.reset+") have lost their "
-								+cc.green+"temporary"+cc.reset+" role: "+cc.red+rows[rowNumber].temporaryRole+cc.reset+", in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset
-							);
-							let roleToRemove=bot.guilds.get(rows[rowNumber].guildID).roles.find(role=>role.name===rows[rowNumber].temporaryRole) || "notFound";
-							if(roleToRemove==="notFound"){
+							if(member==="notFound"){
 								console.info(
-									timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" The "+cc.green+"temporary"+cc.reset+" role: "+cc.cyan+rows[rowNumber].temporaryRole+cc.reset+" was "
-									+cc.red+"not"+cc.reset+" found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | But dbEntry was "+cc.green+"removed"+cc.reset+" from DataBase"
+									timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+cc.cyan+rows[rowNumber].userName+cc.reset+"("+cc.lblue+rows[rowNumber].userID+cc.reset
+									+") was not found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | They will be removed from "+cc.cyan+"TemporaryRoles"+cc.reset+" DataBase"
 								);
 							}
-							else if(member.roles.has(roleToRemove.id)){
-								member.removeRole(roleToRemove)
-								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" TemporaryRoles timer, could not "+cc.yellow+"removeRole()"+cc.reset+" from member | "+error.message));
+							else{
+								finalName=member.user.username; finalID=member.user.id;
+								let roleToRemove=bot.guilds.get(rows[rowNumber].guildID).roles.find(role=>role.name===rows[rowNumber].temporaryRole) || "notFound";
+								if(roleToRemove==="notFound"){
+									console.info(
+										timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" The "+cc.green+"temporary"+cc.reset+" role: "+cc.cyan+rows[rowNumber].temporaryRole+cc.reset+" was "
+										+cc.red+"not"+cc.reset+" found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | But dbEntry will be "+cc.green+"removed"+cc.reset+" from DataBase"
+									);
+								}
+								else{
+									member.send(
+										"⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"+rows[rowNumber].temporaryRole+"** - your **temporary**"
+										+"access has __EXPIRED__ 😭 \nPlease contact <@"+botConfig.ownerID+"> if you wish to renew your **temporary role**."
+									)
+									.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
+									
+									if(member.roles.has(roleToRemove.id)){
+										member.removeRole(roleToRemove)
+										.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" TemporaryRoles timer, could not "+cc.yellow+"removeRole()"+cc.reset+" from member | "+error.message));
+									}
+								}
+								console.log(
+									timeStamp()+" "+cc.cyan+finalName+cc.reset+"("+cc.lblue+finalID+cc.reset+") have lost their "
+									+cc.green+"temporary"+cc.reset+" role: "+cc.red+rows[rowNumber].temporaryRole+cc.reset+", in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset
+								);
 							}
+							
 							myDB.query(`DELETE FROM PokeHelp_bot.temporaryRoles WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}";`,error=>{
 								if(error){console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" TemporaryRoles timer, could not "+cc.yellow+"DELETE FROM"+cc.cyan+" temporaryRoles"+cc.reset+" table\nRAW: "+error);}
 							});
@@ -370,14 +374,7 @@ setInterval(function(){
 						}
 					}
 					if(daysLeft<1){
-						if(member==="notFound"){
-							if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat" || botConfig.consoleLog==="cmdsevents" || botConfig.consoleLog==="events"){
-								console.info(
-									timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+cc.cyan+rows[rowNumber].userName+cc.reset+"("+cc.lblue+rows[rowNumber].userID+cc.reset
-									+") was not found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | They will be removed from "+cc.cyan+"TemporaryRoles"+cc.reset+" DataBase"
-								);
-							}
-						}
+						let finalName=rows[rowNumber].userName, finalID=rows[rowNumber].userID;
 						if(serverSettings.servers[sid].id){
 							if(serverSettings.servers[sid].serverEvents){
 								if(serverSettings.servers[sid].serverEvents.roleChannelID){
@@ -399,27 +396,37 @@ setInterval(function(){
 								}
 							}
 						}
-						if(botConfig.consoleLog==="all" || botConfig.consoleLog==="allnochat" || botConfig.consoleLog==="cmdsevents" || botConfig.consoleLog==="events"){
+						if(member==="notFound"){
+							console.info(
+								timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+cc.cyan+rows[rowNumber].userName+cc.reset+"("+cc.lblue+rows[rowNumber].userID+cc.reset
+								+") was not found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | They will be removed from "+cc.cyan+"TemporaryRoles"+cc.reset+" DataBase"
+							);
+						}
+						else{
+							finalName=member.user.username; finalID=member.user.id;
+							let roleToRemove=bot.guilds.get(rows[rowNumber].guildID).roles.find(role=>role.name===rows[rowNumber].temporaryRole) || "notFound";
+							if(roleToRemove==="notFound"){
+								console.info(
+									timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" The "+cc.green+"temporary"+cc.reset+" role: "+cc.cyan+rows[rowNumber].temporaryRole+cc.reset+" was "
+									+cc.red+"not"+cc.reset+" found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | But dbEntry will be "+cc.green+"removed"+cc.reset+" from DataBase"
+								);
+							}
+							else{
+								member.send(
+									"⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"+rows[rowNumber].temporaryRole+"** - your **temporary**"
+									+"access has __EXPIRED__ 😭 \nPlease contact <@"+botConfig.ownerID+"> if you wish to renew your **temporary role**."
+								)
+								.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
+								
+								if(member.roles.has(roleToRemove.id)){
+									member.removeRole(roleToRemove)
+									.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" TemporaryRoles timer, could not "+cc.yellow+"removeRole()"+cc.reset+" from member | "+error.message));
+								}
+							}
 							console.log(
-								timeStamp()+" "+cc.cyan+member.user.username+cc.reset+"("+cc.lblue+member.id+cc.reset+") have lost their "
+								timeStamp()+" "+cc.cyan+finalName+cc.reset+"("+cc.lblue+finalID+cc.reset+") have lost their "
 								+cc.green+"temporary"+cc.reset+" role: "+cc.red+rows[rowNumber].temporaryRole+cc.reset+", in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset
 							);
-						}
-						member.send(
-							"⚠ <@"+rows[rowNumber].userID+">, you have **lost** your role: **"+rows[rowNumber].temporaryRole+"** - your **temporary**"
-							+"access has __EXPIRED__ 😭 \nPlease contact <@"+botConfig.ownerID+"> if you wish to renew your **temporary role**."
-						)
-						.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" "+error.message+" | Member has disabled DMs, blocked me, or is no longer in server"));
-						let roleToRemove=bot.guilds.get(rows[rowNumber].guildID).roles.find(role=>role.name===rows[rowNumber].temporaryRole) || "notFound";
-						if(roleToRemove==="notFound"){
-							console.info(
-								timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" The "+cc.green+"temporary"+cc.reset+" role: "+cc.cyan+rows[rowNumber].temporaryRole+cc.reset+" was "
-								+cc.red+"not"+cc.reset+" found in server: "+cc.yellow+rows[rowNumber].guildName+cc.reset+" | But dbEntry was "+cc.green+"removed"+cc.reset+" from DataBase"
-							);
-						}
-						else if(member.roles.has(roleToRemove.id)){
-							member.removeRole(roleToRemove)
-							.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" TemporaryRoles timer, could not "+cc.yellow+"removeRole()"+cc.reset+" from member | "+error.message));
 						}
 						sqlite.run(`DELETE FROM temporaryRoles WHERE userID="${rows[rowNumber].userID}" AND temporaryRole="${rows[rowNumber].temporaryRole}";`)
 						.catch(error=>console.info(timeStamp()+" "+cc.hlred+" ERROR "+cc.reset+" TemporaryRoles timer, could not "+cc.yellow+"DELETE FROM"+cc.reset+" database | "+error.message));
@@ -450,7 +457,7 @@ process.on("unhandledRejection",error=>console.log(timeStamp()+" "+cc.hlred+" ER
 // BOT SIGNED IN AND IS READY
 //
 bot.on("ready", ()=>{
-	botConfig.botVersion="3.7";
+	botConfig.botVersion="3.8";
 	console.info(timeStamp()+" -- DISCORD HELPBOT: "+cc.yellow+bot.user.username+cc.reset+", IS "+cc.green+"READY"+cc.reset+"! --");
 
 	// VERSION CHECKER
